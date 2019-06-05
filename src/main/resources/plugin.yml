@@ -1,0 +1,4 @@
+main: com.github.yona168.multiblockapi.MultiblockAPI
+name: MultiblockAPI
+version: "0.1"
+api-version: "1.13"
