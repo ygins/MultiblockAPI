@@ -102,7 +102,7 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
   }
 
   @Override
-  public void doThisOnClick(Consumer<PlayerInteractEvent> eventConsumer) {
+  public void onClick(Consumer<PlayerInteractEvent> eventConsumer) {
     this.eventConsumers.add(eventConsumer);
   }
 

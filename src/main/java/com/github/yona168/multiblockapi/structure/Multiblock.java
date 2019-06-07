@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 public interface Multiblock<T extends MultiblockState> {
   Optional<T> generateStateFrom(PlayerInteractEvent event);
 
-  void doThisOnClick(Consumer<PlayerInteractEvent> eventConsumer);
+  void onClick(Consumer<PlayerInteractEvent> eventConsumer);
 
   void doClickActions(PlayerInteractEvent event, MultiblockState state);
 
