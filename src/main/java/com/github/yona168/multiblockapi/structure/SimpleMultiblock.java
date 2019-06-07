@@ -1,7 +1,7 @@
 package com.github.yona168.multiblockapi.structure;
 
-import com.github.yona168.multiblockapi.state.SimpleMultiblockState;
 import com.github.yona168.multiblockapi.state.MultiblockState;
+import com.github.yona168.multiblockapi.state.SimpleMultiblockState;
 import com.github.yona168.multiblockapi.util.ThreeDimensionalArrayCoords;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -11,6 +11,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
@@ -20,10 +21,10 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
   private final Material trigger;
   private final ThreeDimensionalArrayCoords triggerCoords;
   private final Material[][][] pattern;
-  private final Set<Consumer<PlayerInteractEvent>> eventConsumers;
-  private final BiFunction<SimpleMultiblock, LocationInfo, T> stateCreator;
+  private final Set<BiConsumer<PlayerInteractEvent, T>> eventConsumers;
+  private final BiFunction<SimpleMultiblock<T>, LocationInfo, T> stateCreator;
 
-  public SimpleMultiblock(Material[][][] pattern, ThreeDimensionalArrayCoords coords, BiFunction<SimpleMultiblock, LocationInfo, T> stateCreator) {
+  public SimpleMultiblock(Material[][][] pattern, ThreeDimensionalArrayCoords coords, BiFunction<SimpleMultiblock<T>, LocationInfo, T> stateCreator) {
     this.eventConsumers = new HashSet<>();
     this.pattern = pattern;
     this.triggerCoords = coords;
@@ -55,7 +56,8 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
           }
         }
       }
-      if (southValid) return Optional.of(stateCreator.apply(this, new LocationInfo(facingSouthBottomLeft, SimpleMultiblockState.Orientation.SOUTH)));
+      if (southValid)
+        return Optional.of(stateCreator.apply(this, new LocationInfo(facingSouthBottomLeft, SimpleMultiblockState.Orientation.SOUTH)));
       final Block facingNorthBottomLeft = clickedLoc.clone().add(-triggerCoords.getColumn(), -triggerCoords.getY(), -triggerCoords.getRow()).getBlock();
       north:
       for (int y = 0; y < pattern.length; y++) {
@@ -68,7 +70,8 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
           }
         }
       }
-      if (northValid) return Optional.of(stateCreator.apply(this, new LocationInfo(facingSouthBottomLeft, SimpleMultiblockState.Orientation.SOUTH)));
+      if (northValid)
+        return Optional.of(stateCreator.apply(this, new LocationInfo(facingSouthBottomLeft, SimpleMultiblockState.Orientation.NORTH)));
 
       final Block facingEastBottomLeft = clickedLoc.clone().add(triggerCoords.getRow(), -triggerCoords.getY(), -triggerCoords.getColumn()).getBlock();
       east:
@@ -82,7 +85,8 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
           }
         }
       }
-      if (eastValid) return Optional.of(stateCreator.apply(this, new LocationInfo(facingEastBottomLeft, SimpleMultiblockState.Orientation.EAST)));
+      if (eastValid)
+        return Optional.of(stateCreator.apply(this, new LocationInfo(facingEastBottomLeft, SimpleMultiblockState.Orientation.EAST)));
 
       final Block facingWestBottomLeft = clickedLoc.clone().add(-triggerCoords.getRow(), -triggerCoords.getY(), triggerCoords.getColumn()).getBlock();
       west:
@@ -96,20 +100,21 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
           }
         }
       }
-      if (westValid) return Optional.of(stateCreator.apply(this, new LocationInfo(facingWestBottomLeft, SimpleMultiblockState.Orientation.WEST)));
+      if (westValid)
+        return Optional.of(stateCreator.apply(this, new LocationInfo(facingWestBottomLeft, SimpleMultiblockState.Orientation.WEST)));
     }
     return empty();
   }
 
   @Override
-  public void onClick(Consumer<PlayerInteractEvent> eventConsumer) {
+  public void onClick(BiConsumer<PlayerInteractEvent, T> eventConsumer) {
     this.eventConsumers.add(eventConsumer);
   }
 
   @Override
-  public void doClickActions(PlayerInteractEvent event, MultiblockState multiblockState) {
+  public void doClickActions(PlayerInteractEvent event, T multiblockState) {
     event.setCancelled(true);
-    this.eventConsumers.forEach(cons -> cons.accept(event));
+    this.eventConsumers.forEach(cons -> cons.accept(event, multiblockState));
   }
 
   @Override
@@ -117,21 +122,8 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
     return pattern;
   }
 
-  public class LocationInfo {
-    private final Block bottomLeftCorner;
-    private final MultiblockState.Orientation orientation;
-
-    private LocationInfo(Block bottomLeftCorner, MultiblockState.Orientation orientation) {
-      this.bottomLeftCorner = bottomLeftCorner;
-      this.orientation = orientation;
-    }
-
-    public Block getBottomLeftCorner() {
-      return bottomLeftCorner;
-    }
-
-    public MultiblockState.Orientation getOrientation() {
-      return orientation;
-    }
+  @Override
+  public ThreeDimensionalArrayCoords getTriggerCoords() {
+    return this.triggerCoords;
   }
 }

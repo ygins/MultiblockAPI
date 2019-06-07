@@ -2,54 +2,118 @@ package com.github.yona168.multiblockapi.registry;
 
 import com.github.yona168.multiblockapi.state.MultiblockState;
 import com.github.yona168.multiblockapi.structure.Multiblock;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import org.bukkit.ChatColor;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.world.ChunkUnloadEvent;
+import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.plugin.Plugin;
 
 import java.util.*;
 import java.util.function.Consumer;
 
+import static java.lang.System.currentTimeMillis;
+import static org.bukkit.Bukkit.broadcastMessage;
 import static org.bukkit.Bukkit.getServer;
 
 public class MultiblockRegistry implements Registry<Multiblock<? extends MultiblockState>> {
   private final Set<Multiblock<? extends MultiblockState>> multiblocks = new HashSet<>();
-  private final Map<Location, MultiblockState> multiblockBlockState = new HashMap<>();
+  private final Map<Location, MultiblockState> stateByLocation = new HashMap<>();
+  private final Multimap<Chunk, MultiblockState> stateByChunk = HashMultimap.create();
+  private final Multimap<World, MultiblockState> stateByWorld = HashMultimap.create();
   private final Plugin plugin;
+  private final boolean debug;
+  private long removeTime = 0;
 
-  public MultiblockRegistry(Plugin plugin) {
+  public MultiblockRegistry(Plugin plugin, boolean debug) {
     this.plugin = plugin;
+    this.debug = debug;
     listen(PlayerInteractEvent.class, this::handleInteract);
     listen(BlockBreakEvent.class, this::handleBlockBreak);
+    listen(ChunkUnloadEvent.class, this::handleChunkUnload);
+    listen(WorldUnloadEvent.class, this::handleWorldUnload);
   }
+
+  public MultiblockRegistry(Plugin plugin) {
+    this(plugin, false);
+  }
+
 
   private void handleInteract(PlayerInteractEvent event) {
     if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getHand() != EquipmentSlot.HAND) {
       return;
     }
     final Location clickedLoc = event.getClickedBlock().getLocation();
-    MultiblockState existingState = multiblockBlockState.get(clickedLoc);
+    MultiblockState existingState = stateByLocation.get(clickedLoc);
+    long before = currentTimeMillis();
     if (existingState == null) {
       multiblocks.stream().map(multiblock -> multiblock.generateStateFrom(event)).filter(Optional::isPresent).map(Optional::get).findFirst().ifPresent(multiblockState -> {
-        multiblockState.getAllBlocksLocs().forEach(loc -> multiblockBlockState.put(loc, multiblockState));
+        addToAllMaps(multiblockState);
         multiblockState.getMultiblock().doClickActions(event, multiblockState);
+        if (debug) {
+          long difference = currentTimeMillis() - before;
+          broadcastMessage("Multiblock has been registered, and the whole process took " + ChatColor.LIGHT_PURPLE + difference + ChatColor.RESET+" millis");
+        }
       });
     } else {
       existingState.getMultiblock().doClickActions(event, existingState);
+      long difference = currentTimeMillis() - before;
+      broadcastMessage("Multiblock was detected as registered, and the whole process took " + ChatColor.LIGHT_PURPLE + difference + ChatColor.RESET + " millis");
     }
   }
 
   private void handleBlockBreak(BlockBreakEvent event) {
-    final Location broken = event.getBlock().getLocation();
-    final MultiblockState brokenState = multiblockBlockState.get(broken);
-    if (brokenState != null) {
-      brokenState.getAllBlocksLocs().forEach(multiblockBlockState::remove);
+    if (debug) {
+      removeTime = currentTimeMillis();
     }
+    final Location broken = event.getBlock().getLocation();
+    final MultiblockState brokenState = stateByLocation.get(broken);
+    if (brokenState != null) {
+      removeFromAllMaps(brokenState);
+    }
+  }
+
+  private void handleChunkUnload(ChunkUnloadEvent event) {
+    if (debug) {
+      removeTime = currentTimeMillis();
+    }
+    final Collection<MultiblockState> statesInChunk = stateByChunk.get(event.getChunk());
+    if (statesInChunk != null) {
+      statesInChunk.forEach(this::removeFromAllMaps);
+    }
+  }
+
+  private void handleWorldUnload(WorldUnloadEvent event) {
+    if (debug) {
+      removeTime = currentTimeMillis();
+    }
+    final Collection<MultiblockState> unloadedStates = stateByWorld.get(event.getWorld());
+    unloadedStates.forEach(this::removeFromAllMaps);
+  }
+
+  private void removeFromAllMaps(MultiblockState state) {
+    state.getAllBlocksLocs().forEach(stateByLocation::remove);
+    state.getOccupiedChunks().forEach(chunk -> stateByChunk.remove(chunk, state));
+    stateByWorld.remove(state.getWorld(), state);
+    if (debug) {
+      broadcastMessage("The state was removed in " + ChatColor.LIGHT_PURPLE + (currentTimeMillis() - removeTime) + ChatColor.RESET + " ms");
+    }
+  }
+
+  private void addToAllMaps(MultiblockState state) {
+    state.getAllBlocksLocs().forEach(loc -> stateByLocation.put(loc, state));
+    state.getOccupiedChunks().forEach(loc -> stateByChunk.put(loc, state));
+    stateByWorld.put(state.getWorld(), state);
   }
 
   @Override

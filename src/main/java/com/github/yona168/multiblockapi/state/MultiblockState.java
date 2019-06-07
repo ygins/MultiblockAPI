@@ -1,7 +1,10 @@
 package com.github.yona168.multiblockapi.state;
 
 import com.github.yona168.multiblockapi.structure.Multiblock;
+import com.github.yona168.multiblockapi.util.ThreeDimensionalArrayCoords;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 
 import java.util.HashSet;
@@ -16,14 +19,23 @@ public interface MultiblockState {
 
   Multiblock getMultiblock();
 
-  default Set<Location> getAllBlocksLocs() {
-    final Set<Location> blocks = new HashSet<>(getStructureBlocksLocs());
-    blocks.add(getTriggerBlockLoc());
-    return blocks;
+  Set<Location> getAllBlocksLocs();
+
+  Set<Chunk> getOccupiedChunks();
+
+  Orientation getOrientation();
+
+  default World getWorld(){
+    return getTriggerBlockLoc().getWorld();
   }
 
   enum Orientation {
     NORTH {
+      @Override
+      Location getBottomLeftCornerFromTrigger(Location triggerLoc, ThreeDimensionalArrayCoords coords) {
+        return null;
+      }
+
       @Override
       Block getBlock(int level, int row, int column, Block bottomLeftCorner) {
         return bottomLeftCorner.getRelative(column, level, row);
@@ -48,6 +60,7 @@ public interface MultiblockState {
       }
     };
 
+    abstract Location getBottomLeftCornerFromTrigger(Location triggerLoc, ThreeDimensionalArrayCoords coords);
     abstract Block getBlock(int level, int row, int column, Block bottomLeftCorner);
   }
 }
