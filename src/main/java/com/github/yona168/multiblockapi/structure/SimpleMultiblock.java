@@ -119,9 +119,9 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
 
   public class LocationInfo {
     private final Block bottomLeftCorner;
-    private final SimpleMultiblockState.Orientation orientation;
+    private final MultiblockState.Orientation orientation;
 
-    private LocationInfo(Block bottomLeftCorner, SimpleMultiblockState.Orientation orientation) {
+    private LocationInfo(Block bottomLeftCorner, MultiblockState.Orientation orientation) {
       this.bottomLeftCorner = bottomLeftCorner;
       this.orientation = orientation;
     }
@@ -130,7 +130,7 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
       return bottomLeftCorner;
     }
 
-    public SimpleMultiblockState.Orientation getOrientation() {
+    public MultiblockState.Orientation getOrientation() {
       return orientation;
     }
   }
