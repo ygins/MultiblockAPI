@@ -1,6 +1,5 @@
 package com.github.yona168.multiblockapi.registry;
 
-import com.github.yona168.multiblockapi.state.MultiblockBlock;
 import com.github.yona168.multiblockapi.state.MultiblockState;
 import com.github.yona168.multiblockapi.structure.Multiblock;
 import org.bukkit.Location;
@@ -37,7 +36,7 @@ public class MultiblockRegistry implements Registry<Multiblock<? extends Multibl
     MultiblockState existingState = multiblockBlockState.get(clickedLoc);
     if (existingState == null) {
       multiblocks.stream().map(multiblock -> multiblock.generateStateFrom(event)).filter(Optional::isPresent).map(Optional::get).findFirst().ifPresent(multiblockState -> {
-        multiblockState.getAllBlocks().stream().map(MultiblockBlock::getLocation).forEach(multiblockBlockState::remove);
+        multiblockState.getAllBlocksLocs().forEach(loc -> multiblockBlockState.put(loc, multiblockState));
         multiblockState.getMultiblock().doClickActions(event, multiblockState);
       });
     } else {
@@ -49,7 +48,7 @@ public class MultiblockRegistry implements Registry<Multiblock<? extends Multibl
     final Location broken = event.getBlock().getLocation();
     final MultiblockState brokenState = multiblockBlockState.get(broken);
     if (brokenState != null) {
-      brokenState.getAllBlocks().stream().map(MultiblockBlock::getLocation).forEach(multiblockBlockState::remove);
+      brokenState.getAllBlocksLocs().forEach(multiblockBlockState::remove);
     }
   }
 

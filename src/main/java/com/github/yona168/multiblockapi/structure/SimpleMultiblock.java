@@ -108,6 +108,7 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
 
   @Override
   public void doClickActions(PlayerInteractEvent event, MultiblockState multiblockState) {
+    event.setCancelled(true);
     this.eventConsumers.forEach(cons -> cons.accept(event));
   }
 
