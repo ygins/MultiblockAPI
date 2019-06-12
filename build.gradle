@@ -17,6 +17,7 @@ repositories {
 }
 
 dependencies {
+    implementation 'com.esotericsoftware:kryo:5.0.0-RC4'
     compileOnly 'org.spigotmc:spigot:1.13.2-R0.1-SNAPSHOT'
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }

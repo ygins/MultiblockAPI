@@ -9,6 +9,7 @@ import org.bukkit.block.Block;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 public interface MultiblockState {
   Block getBlockByPattern(int level, int row, int column);
@@ -17,7 +18,7 @@ public interface MultiblockState {
 
   Set<Location> getStructureBlocksLocs();
 
-  Multiblock getMultiblock();
+  Multiblock<MultiblockState> getMultiblock();
 
   Set<Location> getAllBlocksLocs();
 
@@ -25,17 +26,14 @@ public interface MultiblockState {
 
   Orientation getOrientation();
 
+  UUID getUniqueid();
+
   default World getWorld(){
     return getTriggerBlockLoc().getWorld();
   }
 
   enum Orientation {
     NORTH {
-      @Override
-      Location getBottomLeftCornerFromTrigger(Location triggerLoc, ThreeDimensionalArrayCoords coords) {
-        return null;
-      }
-
       @Override
       Block getBlock(int level, int row, int column, Block bottomLeftCorner) {
         return bottomLeftCorner.getRelative(column, level, row);
@@ -59,8 +57,6 @@ public interface MultiblockState {
         return bottomLeftCorner.getRelative(row, level, -column);
       }
     };
-
-    abstract Location getBottomLeftCornerFromTrigger(Location triggerLoc, ThreeDimensionalArrayCoords coords);
     abstract Block getBlock(int level, int row, int column, Block bottomLeftCorner);
   }
 }

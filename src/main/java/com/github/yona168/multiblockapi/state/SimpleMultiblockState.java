@@ -11,8 +11,11 @@ import org.bukkit.block.Block;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+
+import static java.util.UUID.randomUUID;
 
 public class SimpleMultiblockState implements MultiblockState {
   private final Orientation orientation;
@@ -22,6 +25,7 @@ public class SimpleMultiblockState implements MultiblockState {
   private final Set<Location> allBlocks;
   private final Set<Chunk> occupiedChunks;
   private final Multiblock multiblock;
+  private final UUID uuid=randomUUID();
 
   public SimpleMultiblockState(Multiblock multiblock, Orientation orientation, Block bottomLeftBlock, ThreeDimensionalArrayCoords triggerCoords, Material[][][] pattern) {
     this.multiblock = multiblock;
@@ -80,6 +84,11 @@ public class SimpleMultiblockState implements MultiblockState {
   @Override
   public Orientation getOrientation() {
     return orientation;
+  }
+
+  @Override
+  public UUID getUniqueid() {
+    return uuid;
   }
 
   @Override
