@@ -9,30 +9,37 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 public interface StateStorer {
-    void storeAway(MultiblockState t);
-    CompletableFuture<Collection<MultiblockState>> getFromAfar(Chunk chunk);
+  void storeAway(MultiblockState t);
 
-    boolean isGettingFromAfar(Chunk chunk);
+  CompletableFuture<Collection<MultiblockState>> getFromAfar(Chunk chunk);
 
-    void waitUntilDone();
-    void waitUntilDone(Chunk chunk);
-    void waitUntilDone(World world);
+  boolean isGettingFromAfar(Chunk chunk);
 
-    void storeHere(MultiblockState multiblockState);
-    MultiblockState getHere(Location location);
-    Collection<MultiblockState> getHere(Chunk chunk);
-    Collection<MultiblockState> getHere(World world);
+  void waitUntilDone();
 
-    void removeFromHere(MultiblockState state);
-    void removeFromAfar(MultiblockState state);
+  void waitUntilDone(Chunk chunk);
 
-    default void removeFromEverywhere(MultiblockState state){
-        removeFromHere(state);
-        removeFromAfar(state);
-    }
+  void waitUntilDone(World world);
 
-    default void storeEverywhere(MultiblockState state){
-        storeHere(state);
-        storeAway(state);
-    }
+  void storeHere(MultiblockState multiblockState);
+
+  MultiblockState getHere(Location location);
+
+  Collection<MultiblockState> getHere(Chunk chunk);
+
+  Collection<MultiblockState> getHere(World world);
+
+  void removeFromHere(MultiblockState state);
+
+  void removeFromAfar(MultiblockState state);
+
+  default void removeFromEverywhere(MultiblockState state) {
+    removeFromHere(state);
+    removeFromAfar(state);
+  }
+
+  default void storeEverywhere(MultiblockState state) {
+    storeHere(state);
+    storeAway(state);
+  }
 }

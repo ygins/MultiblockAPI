@@ -16,49 +16,50 @@ import static java.nio.file.Files.*;
 
 @SuppressWarnings("unchecked")
 public class Kryogenic {
-    public static final Kryo KRYO = new Kryo();
-    static{
-        BukkitKryogenics.registerSerializers(KRYO);
-    }
+  public static final Kryo KRYO = new Kryo();
 
-    //--Path--
-    public static void freeze(Path file, Object value) throws IOException {
-        if (file.getParent() != null)
-            createDirectories(file.getParent());
-        freeze(newOutputStream(file), value);
-    }
+  static {
+    BukkitKryogenics.registerSerializers(KRYO);
+  }
 
-    public static <Type> Type thaw(Path file) throws IOException {
-        return thaw(file, () -> null);
-    }
+  //--Path--
+  public static void freeze(Path file, Object value) throws IOException {
+    if (file.getParent() != null)
+      createDirectories(file.getParent());
+    freeze(newOutputStream(file), value);
+  }
 
-    public static <Type> Type thaw(Path file, Type defaultValue) throws IOException {
-        return thaw(file, () -> defaultValue);
-    }
+  public static <Type> Type thaw(Path file) throws IOException {
+    return thaw(file, () -> null);
+  }
 
-    public static <Type> Type thaw(Path file, Supplier<Type> defaultSupplier) throws IOException {
-        return isRegularFile(file) ? thaw(newInputStream(file), defaultSupplier) : defaultSupplier.get();
-    }
+  public static <Type> Type thaw(Path file, Type defaultValue) throws IOException {
+    return thaw(file, () -> defaultValue);
+  }
 
-    //--IO--
-    public static void freeze(OutputStream output, Object value) {
-        try (final Output out = new UnsafeOutput(output)) {
-            KRYO.writeClassAndObject(out, value);
-        }
-    }
+  public static <Type> Type thaw(Path file, Supplier<Type> defaultSupplier) throws IOException {
+    return isRegularFile(file) ? thaw(newInputStream(file), defaultSupplier) : defaultSupplier.get();
+  }
 
-    public static <Type> Type thaw(InputStream input) {
-        return thaw(input, () -> null);
+  //--IO--
+  public static void freeze(OutputStream output, Object value) {
+    try (final Output out = new UnsafeOutput(output)) {
+      KRYO.writeClassAndObject(out, value);
     }
+  }
 
-    public static <Type> Type thaw(InputStream input, Type defaultValue) {
-        return thaw(input, () -> defaultValue);
-    }
+  public static <Type> Type thaw(InputStream input) {
+    return thaw(input, () -> null);
+  }
 
-    public static <Type> Type thaw(InputStream input, Supplier<Type> defaultSupplier) {
-        try (final Input in = new UnsafeInput(input)) {
-            final Type value = (Type) KRYO.readClassAndObject(in);
-            return value == null ? defaultSupplier.get() : value;
-        }
+  public static <Type> Type thaw(InputStream input, Type defaultValue) {
+    return thaw(input, () -> defaultValue);
+  }
+
+  public static <Type> Type thaw(InputStream input, Supplier<Type> defaultSupplier) {
+    try (final Input in = new UnsafeInput(input)) {
+      final Type value = (Type) KRYO.readClassAndObject(in);
+      return value == null ? defaultSupplier.get() : value;
     }
+  }
 }

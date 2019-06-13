@@ -22,7 +22,8 @@ public class ThreeDimensionalArrayCoords {
   public int getColumn() {
     return z;
   }
-  public static <T> T get(T[][][] arr,ThreeDimensionalArrayCoords coords){
+
+  public static <T> T get(T[][][] arr, ThreeDimensionalArrayCoords coords) {
     return arr[coords.y][coords.x][coords.z];
   }
 }

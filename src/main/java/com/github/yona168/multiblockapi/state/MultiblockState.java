@@ -28,7 +28,7 @@ public interface MultiblockState {
 
   UUID getUniqueid();
 
-  default World getWorld(){
+  default World getWorld() {
     return getTriggerBlockLoc().getWorld();
   }
 
@@ -57,6 +57,7 @@ public interface MultiblockState {
         return bottomLeftCorner.getRelative(row, level, -column);
       }
     };
+
     abstract Block getBlock(int level, int row, int column, Block bottomLeftCorner);
   }
 }
