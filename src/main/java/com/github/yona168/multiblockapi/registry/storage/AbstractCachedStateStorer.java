@@ -62,9 +62,14 @@ public abstract class AbstractCachedStateStorer implements StateStorer {
 
     @Override
     public void storeHere(MultiblockState state) {
-        state.getAllBlocksLocs().forEach(loc -> stateByLocation.put(loc, state));
+        state.getAllBlocksLocs().stream().map(AbstractCachedStateStorer::normalize).forEach(loc -> stateByLocation.put(loc, state));
         state.getOccupiedChunks().forEach(loc -> stateByChunk.put(loc, state));
         stateByWorld.put(state.getWorld(), state);
+    }
+    private static Location normalize(Location loc){
+        loc.setYaw(0);
+        loc.setPitch(0);
+        return loc;
     }
 
     @Override

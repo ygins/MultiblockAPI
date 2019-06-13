@@ -9,6 +9,8 @@ import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -22,20 +24,19 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.plugin.Plugin;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static java.lang.System.currentTimeMillis;
-import static org.bukkit.Bukkit.broadcastMessage;
-import static org.bukkit.Bukkit.getServer;
+import static org.bukkit.Bukkit.*;
 
 public class MultiblockRegistry implements Registry<Multiblock<? extends MultiblockState>> {
     private final Set<Multiblock<? extends MultiblockState>> multiblocks = new HashSet<>();
     private final Plugin plugin;
-    private final boolean debug;
-    private long removeTime = 0;
+    private final BiConsumer<CommandSender, String> debug;
     private final StateStorer stateStorer;
 
-    public MultiblockRegistry(Plugin plugin, StateStorer stateStorer, boolean debug) {
+    public MultiblockRegistry(Plugin plugin, StateStorer stateStorer, BiConsumer<CommandSender, String> debug) {
         this.plugin = plugin;
         this.debug = debug;
         this.stateStorer = stateStorer;
@@ -47,7 +48,7 @@ public class MultiblockRegistry implements Registry<Multiblock<? extends Multibl
     }
 
     public MultiblockRegistry(Plugin plugin, StateStorer stateStorer) {
-        this(plugin, stateStorer, false);
+        this(plugin, stateStorer, null);
     }
 
 
@@ -56,7 +57,7 @@ public class MultiblockRegistry implements Registry<Multiblock<? extends Multibl
             return;
         }
         final Location clickedLoc = event.getClickedBlock().getLocation();
-        if(stateStorer.isGettingFromAfar(clickedLoc.getChunk())){
+        if (stateStorer.isGettingFromAfar(clickedLoc.getChunk())) {
             return;
         }
         MultiblockState existingState = stateStorer.getHere(clickedLoc);
@@ -65,64 +66,79 @@ public class MultiblockRegistry implements Registry<Multiblock<? extends Multibl
             multiblocks.stream().map(multiblock -> multiblock.generateStateFrom(event)).filter(Optional::isPresent).map(Optional::get).findFirst().ifPresent(multiblockState -> {
                 stateStorer.storeHere(multiblockState);
                 multiblockState.getMultiblock().doClickActions(event, multiblockState);
-                if (debug) {
+                if (debug != null) {
                     long difference = currentTimeMillis() - before;
-                    broadcastMessage("Multiblock has been registered, and the whole process took " + ChatColor.LIGHT_PURPLE + difference + ChatColor.RESET + " millis");
+                    debug.accept(event.getPlayer(), "Multiblock has been registered, and the whole process took " + ChatColor.LIGHT_PURPLE + difference + ChatColor.RESET + " millis");
                 }
+                stateStorer.storeHere(multiblockState);
             });
         } else {
             existingState.getMultiblock().doClickActions(event, existingState);
             long difference = currentTimeMillis() - before;
-            broadcastMessage("Multiblock was detected as registered, and the whole process took " + ChatColor.LIGHT_PURPLE + difference + ChatColor.RESET + " millis");
+            debug.accept(event.getPlayer(), "Multiblock was detected as registered, and the whole process took " + ChatColor.LIGHT_PURPLE + difference + ChatColor.RESET + " millis");
         }
     }
 
     private void handleBlockBreak(BlockBreakEvent event) {
         if (stateStorer.isGettingFromAfar(event.getBlock().getLocation().getChunk())) {
+            event.getPlayer().sendMessage("Multiblocks are being updated for this chunk, please wait...");
+            event.setCancelled(true);
             return;
         }
-        if (debug) {
+        long removeTime = 0;
+        if (debug != null) {
             removeTime = currentTimeMillis();
         }
         final Location broken = event.getBlock().getLocation();
         final MultiblockState brokenState = stateStorer.getHere(broken);
         if (brokenState != null) {
             stateStorer.removeFromEverywhere(brokenState);
+            if (debug != null) {
+                debug.accept(event.getPlayer(), removeTimeMsg(removeTime));
+            }
         }
     }
 
     private void handleChunkUnload(ChunkUnloadEvent event) {
-        stateStorer.waitUntilDone(event.getChunk());
-        if (debug) {
+        final Chunk chunk = event.getChunk();
+        stateStorer.waitUntilDone(chunk);
+        long removeTime = 0;
+        if (debug != null) {
             removeTime = currentTimeMillis();
         }
-        final Collection<MultiblockState> statesInChunk = stateStorer.getHere(event.getChunk());
-        if (statesInChunk != null) {
+        final Collection<MultiblockState> statesInChunk = stateStorer.getHere(chunk);
+        if (statesInChunk != null&&!statesInChunk.isEmpty()) {
             statesInChunk.forEach(state -> {
                 stateStorer.removeFromHere(state);
                 stateStorer.storeAway(state);
             });
+            if (debug != null) {
+                debug.accept(getConsoleSender(), statesInChunk.size() + "states were removed from chunk " + ChatColor.RED + chunk.getX() + ", " + chunk.getZ() + " in " + ChatColor.LIGHT_PURPLE + (currentTimeMillis() - removeTime) + ChatColor.RESET + " ms.");
+            }
         }
     }
 
     private void handleChunkLoad(ChunkLoadEvent event) {
-        if (stateStorer.isGettingFromAfar(event.getChunk())) {
+        final Chunk chunk = event.getChunk();
+        if (stateStorer.isGettingFromAfar(chunk)) {
             return;
         }
-        stateStorer.getFromAfar(event.getChunk()).thenAccept(statesToBeAdded -> {
-            if (statesToBeAdded == null) {
+        long removeTime = currentTimeMillis();
+        stateStorer.getFromAfar(chunk).thenAccept(statesToBeAdded -> {
+            if (statesToBeAdded == null || statesToBeAdded.isEmpty()) {
                 return;
             }
-            statesToBeAdded.forEach(state -> {
-                stateStorer.storeHere(state);
-                stateStorer.removeFromAfar(state);
-            });
+            statesToBeAdded.forEach(stateStorer::storeHere);
+            if (debug != null) {
+                debug.accept(getConsoleSender(), statesToBeAdded.size() + " states were pulled from afar into chunk " + ChatColor.RED + chunk.getX() + ", " + chunk.getZ() + " in " + ChatColor.LIGHT_PURPLE + (currentTimeMillis() - removeTime) + ChatColor.RESET + " ms.");
+            }
         });
     }
 
     private void handleWorldUnload(WorldUnloadEvent event) {
         stateStorer.waitUntilDone(event.getWorld());
-        if (debug) {
+        long removeTime = 0;
+        if (debug != null) {
             removeTime = currentTimeMillis();
         }
         final Collection<MultiblockState> unloadedStates = stateStorer.getHere(event.getWorld());
@@ -133,6 +149,9 @@ public class MultiblockRegistry implements Registry<Multiblock<? extends Multibl
             stateStorer.removeFromHere(state);
             stateStorer.storeAway(state);
         });
+        if (debug != null) {
+            debug.accept(getConsoleSender(), unloadedStates.size() + " states were removed from world " + ChatColor.RED + event.getWorld().getName() + " in " + (currentTimeMillis() - removeTime) + " ms.");
+        }
     }
 
     @Override
@@ -144,5 +163,9 @@ public class MultiblockRegistry implements Registry<Multiblock<? extends Multibl
     private <T extends Event> void listen(Class<T> clazz, Consumer<T> handler) {
         getServer().getPluginManager().registerEvent(clazz, new Listener() {
         }, EventPriority.NORMAL, (listener, event) -> handler.accept((T) event), this.plugin);
+    }
+
+    private static String removeTimeMsg(long removeTime) {
+        return "Multiblock removed in " + ChatColor.LIGHT_PURPLE + (currentTimeMillis() - removeTime) + ChatColor.RESET + " ms";
     }
 }

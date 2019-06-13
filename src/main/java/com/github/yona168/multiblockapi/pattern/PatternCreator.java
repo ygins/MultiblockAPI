@@ -7,13 +7,6 @@ public class PatternCreator {
 
   public PatternCreator(int height, int depth, int length) {
     this(new Material[height][depth][length]);
-    for (int y = 0; y < pattern.length; y++) {
-      for (int r = 0; r < pattern[0].length; r++) {
-        for (int c = 0; c < pattern[0][0].length; c++) {
-          pattern[y][r][c] = Material.AIR;
-        }
-      }
-    }
   }
 
   private PatternCreator(Material[][][] arr) {

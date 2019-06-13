@@ -41,7 +41,11 @@ public class KryoStateStorer extends AbstractCachedStateStorer{
     @Override
     public Collection<MultiblockState> initGetFromAfar(Chunk chunk) {
         try {
-            return list(getFilePathFor(chunk)).map(path->{
+            Path targetDir=getFilePathFor(chunk);
+            if(notExists(targetDir)){
+                return new HashSet<>();
+            }
+            return list(targetDir).map(path->{
                 try {
                     MultiblockState state=Kryogenic.thaw(path);
                     removeFromAfar(state);
@@ -74,7 +78,7 @@ public class KryoStateStorer extends AbstractCachedStateStorer{
     private void createDirIfNotExists(Path dir) {
         if (!exists(dir)) {
             try {
-                createDirectory(dir);
+                createDirectories(dir);
             } catch (IOException e) {
                 e.printStackTrace();
             }
