@@ -21,6 +21,8 @@ public interface Multiblock<T extends MultiblockState> {
 
   ThreeDimensionalArrayCoords getTriggerCoords();
 
+  String getId();
+
   class LocationInfo {
     private final Block bottomLeftCorner;
     private final MultiblockState.Orientation orientation;

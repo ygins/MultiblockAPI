@@ -2,15 +2,17 @@ package com.github.yona168.multiblockapi.registry.storage;
 
 import com.github.yona168.multiblockapi.registry.storage.kryo.Kryogenic;
 import com.github.yona168.multiblockapi.state.MultiblockState;
+import com.github.yona168.multiblockapi.structure.Multiblock;
+import com.github.yona168.multiblockapi.util.ChunkCoords;
 import org.bukkit.Chunk;
 import org.bukkit.plugin.Plugin;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Objects;
 
 import static java.nio.file.Files.*;
 import static java.util.stream.Collectors.toSet;
@@ -22,6 +24,11 @@ public class KryoStateStorer extends AbstractCachedStateStorer {
     super(plugin);
     this.dataFolder = dataFolder;
     createDirIfNotExists(dataFolder);
+  }
+
+  @Override
+  public void onRegister(Multiblock multiblock) {
+    Kryogenic.KRYO.register(multiblock.getClass());
   }
 
   @Override
@@ -51,10 +58,9 @@ public class KryoStateStorer extends AbstractCachedStateStorer {
           removeFromAfar(state);
           return state;
         } catch (IOException e) {
-          e.printStackTrace();
+          throw new RuntimeException("I oofed");
         }
-        return null;
-      }).filter(Objects::nonNull).collect(toSet());
+      }).collect(toSet());
     } catch (IOException e) {
       e.printStackTrace();
       return new HashSet<>();
@@ -63,7 +69,7 @@ public class KryoStateStorer extends AbstractCachedStateStorer {
 
   @Override
   public void removeFromAfar(MultiblockState state) {
-    final Path targetFile = getFilePathFor(state.getTriggerBlockLoc().getChunk()).resolve(state.getUniqueid().toString());
+    final Path targetFile = getFilePathFor(state.getTriggerChunk()).resolve(state.getUniqueid().toString());
     try {
       Files.deleteIfExists(targetFile);
     } catch (IOException e) {
@@ -71,18 +77,28 @@ public class KryoStateStorer extends AbstractCachedStateStorer {
     }
   }
 
-  private Path getFilePathFor(Chunk targetChunk) {
-    return dataFolder.resolve(targetChunk.getX() + "-" + targetChunk.getZ());
+  private Path getFilePathFor(Chunk chunk) {
+    return getFilePathFor(chunk.getX(), chunk.getZ());
+  }
+
+  private Path getFilePathFor(ChunkCoords targetChunk) {
+    return getFilePathFor(targetChunk.getX(), targetChunk.getZ());
+  }
+
+  private Path getFilePathFor(int x, int z) {
+    return dataFolder.resolve(x + "-" + z);
   }
 
   private void createDirIfNotExists(Path dir) {
     if (!exists(dir)) {
-      try {
-        createDirectories(dir);
-      } catch (IOException e) {
-        e.printStackTrace();
+      final File dirFile = dir.toFile();
+      boolean success = dirFile.mkdirs();
+      dirFile.setWritable(true);
+      if (!success) {
+        throw new RuntimeException("Directory with path " + dir.toString() + " could not be created!");
       }
     }
   }
+
 
 }

@@ -1,20 +1,23 @@
 package com.github.yona168.multiblockapi.registry.storage;
 
 import com.github.yona168.multiblockapi.state.MultiblockState;
+import com.github.yona168.multiblockapi.util.ChunkCoords;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.plugin.Plugin;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-
-import static java.lang.System.currentTimeMillis;
-import static org.bukkit.Bukkit.broadcastMessage;
 
 public abstract class AbstractCachedStateStorer implements StateStorer {
   private final Map<Location, MultiblockState> stateByLocation = new HashMap<>();
-  private final Multimap<Chunk, MultiblockState> stateByChunk = HashMultimap.create();
+  private final Multimap<ChunkCoords, MultiblockState> stateByChunk = HashMultimap.create();
   private final Multimap<World, MultiblockState> stateByWorld = HashMultimap.create();
   private final Map<Chunk, World> processingChunks = new HashMap<>();
   private final Plugin plugin;
@@ -53,8 +56,10 @@ public abstract class AbstractCachedStateStorer implements StateStorer {
   public CompletableFuture<Collection<MultiblockState>> getFromAfar(Chunk chunk) {
     CompletableFuture<Collection<MultiblockState>> returning = new CompletableFuture<>();
     processingChunks.put(chunk, chunk.getWorld());
-    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> returning.complete(initGetFromAfar(chunk)));
-    processingChunks.remove(chunk);
+    //Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+      returning.complete(initGetFromAfar(chunk));
+      processingChunks.remove(chunk);
+    //});
     return returning;
   }
 
@@ -80,7 +85,7 @@ public abstract class AbstractCachedStateStorer implements StateStorer {
 
   @Override
   public Collection<MultiblockState> getHere(Chunk chunk) {
-    return stateByChunk.get(chunk);
+    return stateByChunk.get(ChunkCoords.fromChunk(chunk));
   }
 
   @Override
@@ -94,5 +99,10 @@ public abstract class AbstractCachedStateStorer implements StateStorer {
   @Override
   public Collection<MultiblockState> getHere(World world) {
     return stateByWorld.get(world);
+  }
+
+  @Override
+  public void storeAllHereAway(){
+
   }
 }

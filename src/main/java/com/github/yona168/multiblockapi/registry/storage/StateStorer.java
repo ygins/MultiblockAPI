@@ -1,6 +1,7 @@
 package com.github.yona168.multiblockapi.registry.storage;
 
 import com.github.yona168.multiblockapi.state.MultiblockState;
+import com.github.yona168.multiblockapi.structure.Multiblock;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -9,7 +10,11 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 public interface StateStorer {
+  void onRegister(Multiblock multiblock);
+
   void storeAway(MultiblockState t);
+
+  void storeAllHereAway();
 
   CompletableFuture<Collection<MultiblockState>> getFromAfar(Chunk chunk);
 

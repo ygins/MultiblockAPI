@@ -27,6 +27,8 @@ public class BukkitSerializers {
 
   private static final Class<?> CLASS_ITEM;
   protected static final Class<?> CLASS_CRAFT_ITEM;
+  protected static final Class<?> CLASS_CRAFT_BLOCK;
+  protected static final Class<?> CLASS_CRAFT_WORLD;
   private static final Constructor<?> CONSTRUCTOR_ITEM;
   private static final Method
           METHOD_ITEM_CREATE,
@@ -69,6 +71,8 @@ public class BukkitSerializers {
 
       CLASS_ITEM = Class(nms, version, "ItemStack");
       CLASS_CRAFT_ITEM = Class(cb, version, "inventory.CraftItemStack");
+      CLASS_CRAFT_BLOCK=Class(cb, version, "block.CraftBlock");
+      CLASS_CRAFT_WORLD=Class(cb,version,"CraftWorld");
       METHOD_ITEM_FROM = CLASS_CRAFT_ITEM.getDeclaredMethod("asBukkitCopy", CLASS_ITEM);
       METHOD_ITEM_TO = CLASS_CRAFT_ITEM.getDeclaredMethod("asNMSCopy", ItemStack.class);
       Method methodItemCreate;
@@ -79,7 +83,7 @@ public class BukkitSerializers {
         methodItemCreate = null;
       } catch (Throwable ignored) {
         itemConstructor = null;
-        methodItemCreate = CLASS_ITEM.getDeclaredMethod("createStack", nbt);
+        methodItemCreate = CLASS_ITEM.getDeclaredMethod("a", nbt);
         methodItemCreate.setAccessible(true);
       }
       CONSTRUCTOR_ITEM = itemConstructor;
@@ -97,7 +101,7 @@ public class BukkitSerializers {
       Method entityLoad = null;
       for (Method method : entityTypes.getDeclaredMethods()) {
         final Class<?>[] params = method.getParameterTypes();
-        if (params.length == 2 && params[0] == entity)
+        if (params.length == 2 && params[0] == nbt)
           entityLoad = method;
       }
       if ((METHOD_ENTITY_LOAD = entityLoad) == null)
@@ -108,6 +112,8 @@ public class BukkitSerializers {
     } catch (Exception e) {
       throw new IllegalStateException("Could not initialize reflection!", e);
     }
+
+
   }
 
   private static Class<?> Class(String format, String version, String name) throws ClassNotFoundException {

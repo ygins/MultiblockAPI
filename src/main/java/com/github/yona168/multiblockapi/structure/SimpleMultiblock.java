@@ -23,13 +23,15 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
   private final Material[][][] pattern;
   private final Set<BiConsumer<PlayerInteractEvent, T>> eventConsumers;
   private final BiFunction<SimpleMultiblock<T>, LocationInfo, T> stateCreator;
+  private final String id;
 
-  public SimpleMultiblock(Material[][][] pattern, ThreeDimensionalArrayCoords coords, BiFunction<SimpleMultiblock<T>, LocationInfo, T> stateCreator) {
+  public SimpleMultiblock(String id, Material[][][] pattern, ThreeDimensionalArrayCoords coords, BiFunction<SimpleMultiblock<T>, LocationInfo, T> stateCreator) {
     this.eventConsumers = new HashSet<>();
     this.pattern = pattern;
     this.triggerCoords = coords;
     this.trigger = ThreeDimensionalArrayCoords.get(pattern, coords);
     this.stateCreator = stateCreator;
+    this.id=id;
   }
 
   @Override
@@ -129,5 +131,10 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
   @Override
   public ThreeDimensionalArrayCoords getTriggerCoords() {
     return this.triggerCoords;
+  }
+
+  @Override
+  public String getId() {
+    return this.id;
   }
 }
