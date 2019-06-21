@@ -60,6 +60,11 @@ public class MultiblockAPI extends JavaPlugin {
     getCommand("myhome").setExecutor(new MyHome());
   }
 
+  @Override
+  public void onDisable(){
+    multiblockRegistry.disable();
+  }
+
   private class ChunkUnloader implements CommandExecutor {
     private Chunk chunk;
 

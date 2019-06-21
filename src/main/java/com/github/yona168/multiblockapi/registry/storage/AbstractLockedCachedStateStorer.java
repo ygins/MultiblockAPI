@@ -11,18 +11,24 @@ import org.bukkit.World;
 import org.bukkit.plugin.Plugin;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public abstract class AbstractCachedStateStorer implements StateStorer {
+public abstract class AbstractLockedCachedStateStorer implements StateStorer {
   private final Map<Location, MultiblockState> stateByLocation = new HashMap<>();
   private final Multimap<ChunkCoords, MultiblockState> stateByChunk = HashMultimap.create();
   private final Multimap<World, MultiblockState> stateByWorld = HashMultimap.create();
-  private final Map<Chunk, World> processingChunks = new HashMap<>();
+  private final Map<Chunk, World> processingChunks = new ConcurrentHashMap<>();
   private final Plugin plugin;
+  private final Map<Chunk, ReentrantReadWriteLock> lockMap = new ConcurrentHashMap<>();
 
-  public AbstractCachedStateStorer(Plugin plugin) {
+  public AbstractLockedCachedStateStorer(Plugin plugin) {
     this.plugin = plugin;
   }
 
@@ -33,21 +39,7 @@ public abstract class AbstractCachedStateStorer implements StateStorer {
 
   @Override
   public void waitUntilDone() {
-    while (processingChunks.size() != 0) {
-
-    }
-  }
-
-  @Override
-  public void waitUntilDone(Chunk chunk) {
-    while (isGettingFromAfar(chunk)) {
-
-    }
-  }
-
-  @Override
-  public void waitUntilDone(World world) {
-    while (processingChunks.containsValue(world)) {
+    while (!processingChunks.isEmpty()) {
 
     }
   }
@@ -56,18 +48,36 @@ public abstract class AbstractCachedStateStorer implements StateStorer {
   public CompletableFuture<Collection<MultiblockState>> getFromAfar(Chunk chunk) {
     CompletableFuture<Collection<MultiblockState>> returning = new CompletableFuture<>();
     processingChunks.put(chunk, chunk.getWorld());
-    //Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+      Lock readLock = lockFor(chunk).readLock();
+      readLock.lock();
       returning.complete(initGetFromAfar(chunk));
       processingChunks.remove(chunk);
-    //});
+      readLock.unlock();
+    });
+    return returning;
+  }
+
+  @Override
+  public CompletableFuture<Void> storeAway(MultiblockState state) {
+    CompletableFuture<Void> returning = new CompletableFuture<>();
+    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+      Lock writeLock = lockFor(state.getTriggerChunk()).writeLock();
+      writeLock.lock();
+      initStoreAway(state);
+      returning.complete(null);
+      writeLock.unlock();
+    });
     return returning;
   }
 
   protected abstract Collection<MultiblockState> initGetFromAfar(Chunk chunk);
 
+  protected abstract void initStoreAway(MultiblockState state);
+
   @Override
   public void storeHere(MultiblockState state) {
-    state.getAllBlocksLocs().stream().map(AbstractCachedStateStorer::normalize).forEach(loc -> stateByLocation.put(loc, state));
+    state.getAllBlocksLocs().stream().map(AbstractLockedCachedStateStorer::normalize).forEach(loc -> stateByLocation.put(loc, state));
     state.getOccupiedChunks().forEach(loc -> stateByChunk.put(loc, state));
     stateByWorld.put(state.getWorld(), state);
   }
@@ -102,7 +112,11 @@ public abstract class AbstractCachedStateStorer implements StateStorer {
   }
 
   @Override
-  public void storeAllHereAway(){
+  public void storeAllAway() {
+    stateByWorld.values().forEach(this::storeAway);
+  }
 
+  private ReadWriteLock lockFor(Chunk chunk) {
+    return lockMap.compute(chunk, ($, lock) -> lock == null ? new ReentrantReadWriteLock(true) : lock);
   }
 }

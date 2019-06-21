@@ -11,6 +11,11 @@ import org.bukkit.block.Block;
 import java.util.*;
 
 public interface MultiblockState {
+
+  void onCreate();
+
+  void onDestroy();
+
   Block getBlockByPattern(int level, int row, int column);
 
   Location getTriggerBlockLoc();
@@ -23,7 +28,7 @@ public interface MultiblockState {
 
   Set<ChunkCoords> getOccupiedChunks();
 
-  ChunkCoords getTriggerChunk();
+  Chunk getTriggerChunk();
 
   Orientation getOrientation();
 
@@ -58,7 +63,8 @@ public interface MultiblockState {
         return bottomLeftCorner.getRelative(row, level, -column);
       }
     };
-    private static Map<Integer, Orientation> intMap=new HashMap<>();
+    private static Map<Integer, Orientation> intMap = new HashMap<>();
+
     abstract Block getBlock(int level, int row, int column, Block bottomLeftCorner);
   }
 }

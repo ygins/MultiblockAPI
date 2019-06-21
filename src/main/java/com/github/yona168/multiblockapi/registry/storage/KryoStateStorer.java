@@ -17,7 +17,7 @@ import java.util.HashSet;
 import static java.nio.file.Files.*;
 import static java.util.stream.Collectors.toSet;
 
-public class KryoStateStorer extends AbstractCachedStateStorer {
+public class KryoStateStorer extends AbstractLockedCachedStateStorer {
   private final Path dataFolder;
 
   public KryoStateStorer(Path dataFolder, Plugin plugin) {
@@ -32,9 +32,9 @@ public class KryoStateStorer extends AbstractCachedStateStorer {
   }
 
   @Override
-  public void storeAway(MultiblockState state) {
+  public void initStoreAway(MultiblockState state) {
     removeFromHere(state);
-    final Chunk targetChunk = state.getTriggerBlockLoc().getChunk();
+    final Chunk targetChunk = state.getTriggerChunk();
     final Path targetChunkFolder = getFilePathFor(targetChunk);
     createDirIfNotExists(targetChunkFolder);
     final Path targetFile = targetChunkFolder.resolve(state.getUniqueid().toString());
@@ -44,6 +44,7 @@ public class KryoStateStorer extends AbstractCachedStateStorer {
       e.printStackTrace();
     }
   }
+
 
   @Override
   public Collection<MultiblockState> initGetFromAfar(Chunk chunk) {
@@ -79,10 +80,6 @@ public class KryoStateStorer extends AbstractCachedStateStorer {
 
   private Path getFilePathFor(Chunk chunk) {
     return getFilePathFor(chunk.getX(), chunk.getZ());
-  }
-
-  private Path getFilePathFor(ChunkCoords targetChunk) {
-    return getFilePathFor(targetChunk.getX(), targetChunk.getZ());
   }
 
   private Path getFilePathFor(int x, int z) {

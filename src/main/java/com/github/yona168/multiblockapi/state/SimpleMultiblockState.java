@@ -4,6 +4,7 @@ import com.github.yona168.multiblockapi.structure.Multiblock;
 import com.github.yona168.multiblockapi.structure.SimpleMultiblock;
 import com.github.yona168.multiblockapi.util.ChunkCoords;
 import com.github.yona168.multiblockapi.util.ThreeDimensionalArrayCoords;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -23,12 +24,12 @@ public class SimpleMultiblockState implements MultiblockState {
   private final Set<Location> structureBlocks = new HashSet<>();
   private final Set<Location> allBlocks;
   private final Set<ChunkCoords> occupiedChunks;
-  private final ChunkCoords triggerChunk;
+  private final Chunk triggerChunk;
   private final Multiblock multiblock;
   private final UUID uuid;
 
   public SimpleMultiblockState(Multiblock multiblock, Orientation orientation, Block bottomLeftBlock, ThreeDimensionalArrayCoords triggerCoords, Material[][][] pattern) {
-    this.uuid=randomUUID();
+    this.uuid = randomUUID();
     this.multiblock = multiblock;
     this.orientation = orientation;
     this.bottomLeftBlock = bottomLeftBlock;
@@ -46,7 +47,7 @@ public class SimpleMultiblockState implements MultiblockState {
     allBlocks = new HashSet<>(structureBlocks);
     allBlocks.add(triggerLoc);
     occupiedChunks = allBlocks.stream().map(Location::getChunk).map(ChunkCoords::fromChunk).collect(Collectors.toSet());
-    this.triggerChunk = ChunkCoords.fromChunk(triggerLoc.getChunk());
+    this.triggerChunk = triggerLoc.getChunk();
   }
 
   public SimpleMultiblockState(Multiblock multiblock, SimpleMultiblock.LocationInfo locInfo) {
@@ -61,6 +62,16 @@ public class SimpleMultiblockState implements MultiblockState {
   @Override
   public Set<Location> getStructureBlocksLocs() {
     return structureBlocks;
+  }
+
+  @Override
+  public void onCreate() {
+
+  }
+
+  @Override
+  public void onDestroy() {
+
   }
 
   @Override
@@ -84,7 +95,7 @@ public class SimpleMultiblockState implements MultiblockState {
   }
 
   @Override
-  public ChunkCoords getTriggerChunk() {
+  public Chunk getTriggerChunk() {
     return triggerChunk;
   }
 
