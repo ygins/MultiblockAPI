@@ -12,15 +12,17 @@ import java.util.concurrent.CompletableFuture;
 public interface StateStorer {
   void onRegister(Multiblock multiblock);
 
-  CompletableFuture<Void> storeAway(MultiblockState t);
+  void storeAway(MultiblockState state);
 
   void storeAllAway();
 
-  CompletableFuture<Collection<MultiblockState>> getFromAfar(Chunk chunk);
+  CompletableFuture<Void> storeAwayAsync(MultiblockState t);
 
-  boolean isGettingFromAfar(Chunk chunk);
+  CompletableFuture<Void> storeAllAwayAsync();
 
-  void waitUntilDone();
+  Collection<MultiblockState> getFromAfar(Chunk chunk);
+
+  CompletableFuture<Collection<MultiblockState>> getFromAfarAsync(Chunk chunk);  boolean isGettingFromAfar(Chunk chunk);
 
   void storeHere(MultiblockState multiblockState);
 
@@ -33,6 +35,12 @@ public interface StateStorer {
   void removeFromHere(MultiblockState state);
 
   void removeFromAfar(MultiblockState state);
+
+  CompletableFuture<Void> removeFromAfarAsync(MultiblockState state);
+
+  void clearHere();
+
+  void waitUntilDone();
 
   default void removeFromEverywhere(MultiblockState state) {
     removeFromHere(state);

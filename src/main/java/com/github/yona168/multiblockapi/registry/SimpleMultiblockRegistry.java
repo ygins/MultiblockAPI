@@ -102,7 +102,6 @@ public class SimpleMultiblockRegistry extends AbstractMultiblockRegistry {
     if(isTestChunk(chunk)){
       broadcastMessage("test chunk unloaading.");
     }
-    stateStorer.waitUntilDone(chunk);
     long removeTime = 0;
     if (debug != null) {
       removeTime = currentTimeMillis();
@@ -141,7 +140,6 @@ public class SimpleMultiblockRegistry extends AbstractMultiblockRegistry {
   }
 
   private void handleWorldUnload(WorldUnloadEvent event) {
-    stateStorer.waitUntilDone(event.getWorld());
     long removeTime = 0;
     if (debug != null) {
       removeTime = currentTimeMillis();

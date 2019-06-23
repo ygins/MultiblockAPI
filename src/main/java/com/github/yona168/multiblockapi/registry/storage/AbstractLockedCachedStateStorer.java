@@ -8,10 +8,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.plugin.Plugin;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Function;
 
 public abstract class AbstractLockedCachedStateStorer implements StateStorer {
   private final Map<Location, MultiblockState> stateByLocation = new HashMap<>();
@@ -32,60 +33,69 @@ public abstract class AbstractLockedCachedStateStorer implements StateStorer {
     this.plugin = plugin;
   }
 
+
+  abstract Collection<MultiblockState> initGetFromAfar(Chunk chunk);
+
+  abstract void initRemoveFromAfar(MultiblockState state);
+
+  abstract void initStoreAway(MultiblockState state);
+
+  @Override
+  public void storeAway(MultiblockState state){
+    withWriteLockFor(state.getTriggerChunk(), ()->initStoreAway(state));
+  }
+
+  @Override
+  public CompletableFuture<Void> storeAwayAsync(MultiblockState state) {
+    CompletableFuture<Void> returning = new CompletableFuture<>();
+    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+      withWriteLockFor(state.getTriggerChunk(), () -> {
+        initStoreAway(state);
+        returning.complete(null);
+      });
+    });
+    return returning;
+  }
+
+  @Override
+  public void storeAllAway() {
+    stateByWorld.values().forEach(this::storeAway);
+  }
+
+  @Override
+  public CompletableFuture<Void> storeAllAwayAsync() {
+    CompletableFuture<Void> returning = new CompletableFuture<>();
+    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+      stateByWorld.values().stream().map(this::storeAwayAsync).forEach(CompletableFuture::join);
+      returning.complete(null);
+    });
+    return returning;
+  }
+
   @Override
   public boolean isGettingFromAfar(Chunk chunk) {
     return processingChunks.containsKey(chunk);
   }
 
   @Override
-  public void waitUntilDone() {
-    while (!processingChunks.isEmpty()) {
-
-    }
+  public Collection<MultiblockState> getFromAfar(Chunk chunk) {
+    return withReadLockFor(chunk, $ -> initGetFromAfar(chunk));
   }
 
   @Override
-  public CompletableFuture<Collection<MultiblockState>> getFromAfar(Chunk chunk) {
+  public CompletableFuture<Collection<MultiblockState>> getFromAfarAsync(Chunk chunk) {
     CompletableFuture<Collection<MultiblockState>> returning = new CompletableFuture<>();
-    processingChunks.put(chunk, chunk.getWorld());
-    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-      Lock readLock = lockFor(chunk).readLock();
-      readLock.lock();
-      returning.complete(initGetFromAfar(chunk));
-      processingChunks.remove(chunk);
-      readLock.unlock();
-    });
+    Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
+            returning.complete(withReadLockFor(chunk, $ -> initGetFromAfar(chunk))));
     return returning;
   }
 
-  @Override
-  public CompletableFuture<Void> storeAway(MultiblockState state) {
-    CompletableFuture<Void> returning = new CompletableFuture<>();
-    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-      Lock writeLock = lockFor(state.getTriggerChunk()).writeLock();
-      writeLock.lock();
-      initStoreAway(state);
-      returning.complete(null);
-      writeLock.unlock();
-    });
-    return returning;
-  }
-
-  protected abstract Collection<MultiblockState> initGetFromAfar(Chunk chunk);
-
-  protected abstract void initStoreAway(MultiblockState state);
 
   @Override
   public void storeHere(MultiblockState state) {
     state.getAllBlocksLocs().stream().map(AbstractLockedCachedStateStorer::normalize).forEach(loc -> stateByLocation.put(loc, state));
     state.getOccupiedChunks().forEach(loc -> stateByChunk.put(loc, state));
     stateByWorld.put(state.getWorld(), state);
-  }
-
-  private static Location normalize(Location loc) {
-    loc.setYaw(0);
-    loc.setPitch(0);
-    return loc;
   }
 
   @Override
@@ -99,24 +109,80 @@ public abstract class AbstractLockedCachedStateStorer implements StateStorer {
   }
 
   @Override
+  public Collection<MultiblockState> getHere(World world) {
+    return stateByWorld.get(world);
+  }
+
+  @Override
   public void removeFromHere(MultiblockState state) {
     state.getAllBlocksLocs().forEach(stateByLocation::remove);
     state.getOccupiedChunks().forEach(chunk -> stateByChunk.remove(chunk, state));
     stateByWorld.remove(state.getWorld(), state);
   }
 
-
   @Override
-  public Collection<MultiblockState> getHere(World world) {
-    return stateByWorld.get(world);
+  public void removeFromAfar(MultiblockState state){
+    withWriteLockFor(state.getTriggerChunk(), ()->initRemoveFromAfar(state));
   }
 
   @Override
-  public void storeAllAway() {
-    stateByWorld.values().forEach(this::storeAway);
+  public CompletableFuture<Void> removeFromAfarAsync(MultiblockState state) {
+    CompletableFuture<Void> returning = new CompletableFuture<>();
+    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+      withWriteLockFor(state.getTriggerChunk(), () -> {
+        initRemoveFromAfar(state);
+        returning.complete(null);
+      });
+    });
+    return returning;
+  }
+
+  @Override
+  public void clearHere(){
+    stateByChunk.clear();
+    stateByLocation.clear();
+    stateByWorld.clear();
+  }
+
+  @Override
+  public void waitUntilDone() {
+    while (!processingChunks.isEmpty()) {
+
+    }
   }
 
   private ReadWriteLock lockFor(Chunk chunk) {
     return lockMap.compute(chunk, ($, lock) -> lock == null ? new ReentrantReadWriteLock(true) : lock);
+  }
+
+  private void withWriteLockFor(Chunk chunk, Runnable runnable) {
+    withLockAndChunk(lockFor(chunk).writeLock(), chunk, runnable);
+  }
+
+  private <T> T withReadLockFor(Chunk chunk, Function<Chunk, T> function) {
+    return withLockAndChunk(lockFor(chunk).readLock(), chunk, function);
+  }
+
+  private <T> T withLockAndChunk(Lock lock, Chunk chunk, Function<Chunk, T> function) {
+    lock.lock();
+    processingChunks.put(chunk, chunk.getWorld());
+    final T result = function.apply(chunk);
+    processingChunks.remove(chunk);
+    lock.unlock();
+    return result;
+  }
+
+  private void withLockAndChunk(Lock lock, Chunk chunk, Runnable runnable) {
+    lock.lock();
+    processingChunks.put(chunk, chunk.getWorld());
+    runnable.run();
+    processingChunks.remove(chunk);
+    lock.unlock();
+  }
+
+  private static Location normalize(Location loc) {
+    loc.setYaw(0);
+    loc.setPitch(0);
+    return loc;
   }
 }

@@ -3,7 +3,6 @@ package com.github.yona168.multiblockapi.registry.storage;
 import com.github.yona168.multiblockapi.registry.storage.kryo.Kryogenic;
 import com.github.yona168.multiblockapi.state.MultiblockState;
 import com.github.yona168.multiblockapi.structure.Multiblock;
-import com.github.yona168.multiblockapi.util.ChunkCoords;
 import org.bukkit.Chunk;
 import org.bukkit.plugin.Plugin;
 
@@ -13,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.concurrent.CompletableFuture;
 
 import static java.nio.file.Files.*;
 import static java.util.stream.Collectors.toSet;
@@ -69,7 +69,7 @@ public class KryoStateStorer extends AbstractLockedCachedStateStorer {
   }
 
   @Override
-  public void removeFromAfar(MultiblockState state) {
+  public void initRemoveFromAfar(MultiblockState state) {
     final Path targetFile = getFilePathFor(state.getTriggerChunk()).resolve(state.getUniqueid().toString());
     try {
       Files.deleteIfExists(targetFile);

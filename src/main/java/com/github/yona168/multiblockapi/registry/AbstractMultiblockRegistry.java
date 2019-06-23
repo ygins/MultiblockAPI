@@ -47,5 +47,7 @@ public abstract class AbstractMultiblockRegistry implements MultiblockRegistry {
   @Override
   public void disable(){
     stateStorer.storeAllAway();
+    stateStorer.waitUntilDone();
+    stateStorer.clearHere();
   }
 }
