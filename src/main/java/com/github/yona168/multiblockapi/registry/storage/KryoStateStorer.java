@@ -12,12 +12,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.concurrent.CompletableFuture;
 
 import static java.nio.file.Files.*;
 import static java.util.stream.Collectors.toSet;
 
-public class KryoStateStorer extends AbstractLockedCachedStateStorer {
+public class KryoStateStorer extends AbstractStateStorer {
   private final Path dataFolder;
 
   public KryoStateStorer(Path dataFolder, Plugin plugin) {
@@ -56,7 +55,6 @@ public class KryoStateStorer extends AbstractLockedCachedStateStorer {
       return list(targetDir).map(path -> {
         try {
           MultiblockState state = Kryogenic.thaw(path);
-          removeFromAfar(state);
           return state;
         } catch (IOException e) {
           throw new RuntimeException("I oofed");

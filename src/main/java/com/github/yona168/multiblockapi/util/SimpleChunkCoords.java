@@ -22,12 +22,12 @@ public class SimpleChunkCoords implements ChunkCoords {
 
   @Override
   public int getX() {
-    return 0;
+    return x;
   }
 
   @Override
   public int getZ() {
-    return 0;
+    return z;
   }
 
   @Override

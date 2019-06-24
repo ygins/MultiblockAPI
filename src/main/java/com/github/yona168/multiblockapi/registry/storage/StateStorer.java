@@ -22,7 +22,9 @@ public interface StateStorer {
 
   Collection<MultiblockState> getFromAfar(Chunk chunk);
 
-  CompletableFuture<Collection<MultiblockState>> getFromAfarAsync(Chunk chunk);  boolean isGettingFromAfar(Chunk chunk);
+  CompletableFuture<Collection<MultiblockState>> getFromAfarAsync(Chunk chunk);
+
+  boolean isGettingFromAfar(Chunk chunk);
 
   void storeHere(MultiblockState multiblockState);
 

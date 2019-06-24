@@ -3,6 +3,7 @@ package com.github.yona168.multiblockapi.state;
 import com.github.yona168.multiblockapi.structure.Multiblock;
 import com.github.yona168.multiblockapi.util.ChunkCoords;
 import com.github.yona168.multiblockapi.util.ThreeDimensionalArrayCoords;
+import com.gitlab.avelyn.architecture.base.Toggleable;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -10,11 +11,7 @@ import org.bukkit.block.Block;
 
 import java.util.*;
 
-public interface MultiblockState {
-
-  void onCreate();
-
-  void onDestroy();
+public interface MultiblockState extends Toggleable {
 
   Block getBlockByPattern(int level, int row, int column);
 

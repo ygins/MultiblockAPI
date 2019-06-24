@@ -22,22 +22,4 @@ public interface Multiblock<T extends MultiblockState> {
   ThreeDimensionalArrayCoords getTriggerCoords();
 
   String getId();
-
-  class LocationInfo {
-    private final Block bottomLeftCorner;
-    private final MultiblockState.Orientation orientation;
-
-    public LocationInfo(Block bottomLeftCorner, MultiblockState.Orientation orientation) {
-      this.bottomLeftCorner = bottomLeftCorner;
-      this.orientation = orientation;
-    }
-
-    public Block getBottomLeftCorner() {
-      return bottomLeftCorner;
-    }
-
-    public MultiblockState.Orientation getOrientation() {
-      return orientation;
-    }
-  }
 }

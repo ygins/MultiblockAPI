@@ -4,8 +4,9 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.github.yona168.multiblockapi.MultiblockAPI;
+import com.github.yona168.multiblockapi.util.ChunkCoords;
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -101,7 +102,7 @@ public class BukkitKryogenics {
 
       @Override
       public Location read(Kryo kryo, Input input, Class type) {
-        return Location.deserialize((Map<String,Object>)kryo.readClassAndObject(input));
+        return Location.deserialize((Map<String, Object>) kryo.readClassAndObject(input));
       }
     });
 
@@ -113,13 +114,13 @@ public class BukkitKryogenics {
 
       @Override
       public Block read(Kryo kryo, Input input, Class type) {
-        return Location.deserialize((Map<String, Object>)kryo.readClassAndObject(input)).getBlock();
+        return Location.deserialize((Map<String, Object>) kryo.readClassAndObject(input)).getBlock();
       }
     };
     kryo.register(Block.class, blockSerializer);
     kryo.register(CLASS_CRAFT_BLOCK, blockSerializer);
 
-    Serializer<World> worldSerializer=new Serializer<World>() {
+    Serializer<World> worldSerializer = new Serializer<World>() {
       @Override
       public void write(Kryo kryo, Output output, World object) {
         uuidSerializer.write(kryo, output, object.getUID());
@@ -132,6 +133,23 @@ public class BukkitKryogenics {
     };
     kryo.register(World.class, worldSerializer);
     kryo.register(CLASS_CRAFT_WORLD, worldSerializer);
+
+    Serializer<Chunk> chunkSerializer = new Serializer<Chunk>() {
+      @Override
+      public void write(Kryo kryo, Output output, Chunk object) {
+        kryo.writeClassAndObject(output, ChunkCoords.fromChunk(object));
+      }
+
+      @Override
+      public Chunk read(Kryo kryo, Input input, Class<? extends Chunk> type) {
+        return ((ChunkCoords) kryo.readClassAndObject(input)).toChunk();
+      }
+    };
+
+    kryo.addDefaultSerializer(Chunk.class, chunkSerializer);
+    kryo.register(Chunk.class);
   }
+
+
 }
 

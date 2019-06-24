@@ -1,9 +1,10 @@
 package com.github.yona168.multiblockapi.state;
 
+import com.github.yona168.multiblockapi.structure.LocationInfo;
 import com.github.yona168.multiblockapi.structure.Multiblock;
-import com.github.yona168.multiblockapi.structure.SimpleMultiblock;
 import com.github.yona168.multiblockapi.util.ChunkCoords;
 import com.github.yona168.multiblockapi.util.ThreeDimensionalArrayCoords;
+import com.gitlab.avelyn.architecture.base.Component;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -17,7 +18,7 @@ import java.util.stream.Collectors;
 
 import static java.util.UUID.randomUUID;
 
-public class SimpleMultiblockState implements MultiblockState {
+public class SimpleMultiblockState extends Component implements MultiblockState {
   private final Orientation orientation;
   private final Block bottomLeftBlock;
   private final Location triggerLoc;
@@ -50,7 +51,7 @@ public class SimpleMultiblockState implements MultiblockState {
     this.triggerChunk = triggerLoc.getChunk();
   }
 
-  public SimpleMultiblockState(Multiblock multiblock, SimpleMultiblock.LocationInfo locInfo) {
+  public SimpleMultiblockState(Multiblock multiblock, LocationInfo locInfo) {
     this(multiblock, locInfo.getOrientation(), locInfo.getBottomLeftCorner(), multiblock.getTriggerCoords(), multiblock.getPattern());
   }
 
@@ -62,16 +63,6 @@ public class SimpleMultiblockState implements MultiblockState {
   @Override
   public Set<Location> getStructureBlocksLocs() {
     return structureBlocks;
-  }
-
-  @Override
-  public void onCreate() {
-
-  }
-
-  @Override
-  public void onDestroy() {
-
   }
 
   @Override

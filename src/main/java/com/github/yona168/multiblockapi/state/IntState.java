@@ -1,12 +1,12 @@
 package com.github.yona168.multiblockapi.state;
 
+import com.github.yona168.multiblockapi.structure.LocationInfo;
 import com.github.yona168.multiblockapi.structure.Multiblock;
-import com.github.yona168.multiblockapi.structure.SimpleMultiblock;
 
 public class IntState extends SimpleMultiblockState {
-  private int x = 1;
+  private int x = 0;
 
-  public IntState(Multiblock multiblock, SimpleMultiblock.LocationInfo locInfo) {
+  public IntState(Multiblock multiblock, LocationInfo locInfo) {
     super(multiblock, locInfo);
   }
 
@@ -17,4 +17,5 @@ public class IntState extends SimpleMultiblockState {
   public int getInt() {
     return x;
   }
+
 }

@@ -3,10 +3,9 @@ package com.github.yona168.multiblockapi.registry;
 import com.github.yona168.multiblockapi.MultiblockAPI;
 import com.github.yona168.multiblockapi.registry.storage.StateStorer;
 import com.github.yona168.multiblockapi.state.MultiblockState;
-import com.github.yona168.multiblockapi.structure.Multiblock;
-import org.bukkit.ChatColor;
-import org.bukkit.Chunk;
-import org.bukkit.Location;
+import com.gitlab.avelyn.architecture.base.Toggleable;
+import com.gitlab.avelyn.core.base.Events;
+import org.bukkit.*;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
@@ -20,33 +19,39 @@ import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.plugin.Plugin;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import static com.github.yona168.multiblockapi.util.Stacktrace.printStackTrace;
+import static com.gitlab.avelyn.core.base.Events.listen;
 import static java.lang.System.currentTimeMillis;
 import static org.bukkit.Bukkit.*;
 
 public class SimpleMultiblockRegistry extends AbstractMultiblockRegistry {
-  private final Plugin plugin;
   private final BiConsumer<CommandSender, String> debug;
   private final StateStorer stateStorer;
 
-  public SimpleMultiblockRegistry(Plugin plugin, StateStorer stateStorer, BiConsumer<CommandSender, String> debug) {
+  public SimpleMultiblockRegistry(StateStorer stateStorer, BiConsumer<CommandSender, String> debug) {
     super(stateStorer);
-    this.plugin = plugin;
     this.debug = debug;
     this.stateStorer = stateStorer;
-    listen(PlayerInteractEvent.class, this::handleInteract);
-    listen(BlockBreakEvent.class, this::handleBlockBreak);
-    listen(ChunkUnloadEvent.class, this::handleChunkUnload);
-    listen(WorldUnloadEvent.class, this::handleWorldUnload);
-    listen(ChunkLoadEvent.class, this::handleChunkLoad);
+    addChild(listen(PlayerInteractEvent.class, this::handleInteract));
+    addChild(listen(BlockBreakEvent.class, this::handleBlockBreak));
+    addChild(listen(ChunkUnloadEvent.class, this::handleChunkUnload));
+    addChild(listen(WorldUnloadEvent.class, this::handleWorldUnload));
+    addChild(listen(ChunkLoadEvent.class, this::handleChunkLoad));
+    onEnable(() ->
+            Bukkit.getWorlds().stream().map(World::getLoadedChunks)
+                    .flatMap(Arrays::stream).forEach(chunk->proccessLoadingChunk(chunk, false))
+    );
+
+    onDisable(()->Bukkit.getWorlds().forEach(world->processUnloadingWorld(world, false)));
   }
 
-  public SimpleMultiblockRegistry(Plugin plugin, StateStorer stateStorer) {
-    this(plugin, stateStorer, null);
+  public SimpleMultiblockRegistry(StateStorer stateStorer) {
+    this(stateStorer, null);
   }
 
 
@@ -68,7 +73,6 @@ public class SimpleMultiblockRegistry extends AbstractMultiblockRegistry {
           long difference = currentTimeMillis() - before;
           debug.accept(event.getPlayer(), "Multiblock has been registered, and the whole process took " + ChatColor.LIGHT_PURPLE + difference + ChatColor.RESET + " millis");
         }
-        stateStorer.storeHere(multiblockState);
       });
     } else {
       existingState.getMultiblock().doClickActions(event, existingState);
@@ -90,7 +94,8 @@ public class SimpleMultiblockRegistry extends AbstractMultiblockRegistry {
     final Location broken = event.getBlock().getLocation();
     final MultiblockState brokenState = stateStorer.getHere(broken);
     if (brokenState != null) {
-      stateStorer.removeFromEverywhere(brokenState);
+      stateStorer.removeFromHere(brokenState);
+      stateStorer.removeFromAfar(brokenState);
       if (debug != null) {
         debug.accept(event.getPlayer(), removeTimeMsg(removeTime));
       }
@@ -99,7 +104,7 @@ public class SimpleMultiblockRegistry extends AbstractMultiblockRegistry {
 
   private void handleChunkUnload(ChunkUnloadEvent event) {
     final Chunk chunk = event.getChunk();
-    if(isTestChunk(chunk)){
+    if (isTestChunk(chunk)) {
       broadcastMessage("test chunk unloaading.");
     }
     long removeTime = 0;
@@ -110,7 +115,7 @@ public class SimpleMultiblockRegistry extends AbstractMultiblockRegistry {
     if (statesInChunk != null && !statesInChunk.isEmpty()) {
       statesInChunk.forEach(state -> {
         stateStorer.removeFromHere(state);
-        stateStorer.storeAway(state);
+        stateStorer.storeAwayAsync(state);
       });
       if (debug != null) {
         debug.accept(getConsoleSender(), statesInChunk.size() + "states were removed from chunk " + ChatColor.RED + chunk.getX() + ", " + chunk.getZ() + " in " + ChatColor.LIGHT_PURPLE + (currentTimeMillis() - removeTime) + ChatColor.RESET + " ms.");
@@ -119,8 +124,11 @@ public class SimpleMultiblockRegistry extends AbstractMultiblockRegistry {
   }
 
   private void handleChunkLoad(ChunkLoadEvent event) {
-    final Chunk chunk = event.getChunk();
-    if(isTestChunk(chunk)){
+    proccessLoadingChunk(event.getChunk(), true);
+  }
+
+  private void proccessLoadingChunk(Chunk chunk, boolean async) {
+    if (isTestChunk(chunk)) {
       //printStackTrace();
       broadcastMessage("Test chunk loading");
     }
@@ -128,11 +136,15 @@ public class SimpleMultiblockRegistry extends AbstractMultiblockRegistry {
       return;
     }
     long removeTime = currentTimeMillis();
-    stateStorer.getFromAfar(chunk).thenAccept(statesToBeAdded -> {
+    stateStorer.getFromAfarAsync(chunk).thenAccept(statesToBeAdded -> {
       if (statesToBeAdded == null || statesToBeAdded.isEmpty()) {
         return;
       }
-      statesToBeAdded.forEach(stateStorer::storeHere);
+      statesToBeAdded.forEach(state -> {
+        stateStorer.storeHere(state);
+        if (async) stateStorer.removeFromAfarAsync(state);
+        else stateStorer.removeFromAfar(state);
+      });
       if (debug != null) {
         debug.accept(getConsoleSender(), statesToBeAdded.size() + " states were pulled from afar into chunk " + ChatColor.RED + chunk.getX() + ", " + chunk.getZ() + " in " + ChatColor.LIGHT_PURPLE + (currentTimeMillis() - removeTime) + ChatColor.RESET + " ms.");
       }
@@ -140,33 +152,34 @@ public class SimpleMultiblockRegistry extends AbstractMultiblockRegistry {
   }
 
   private void handleWorldUnload(WorldUnloadEvent event) {
+    processUnloadingWorld(event.getWorld(), true);
+  }
+
+  private void processUnloadingWorld(World world, boolean async) {
     long removeTime = 0;
     if (debug != null) {
       removeTime = currentTimeMillis();
     }
-    final Collection<MultiblockState> unloadedStates = stateStorer.getHere(event.getWorld());
+    final Collection<MultiblockState> unloadedStates = stateStorer.getHere(world);
     if (unloadedStates == null) {
       return;
     }
     unloadedStates.forEach(state -> {
       stateStorer.removeFromHere(state);
-      stateStorer.storeAway(state);
+      if (async) stateStorer.storeAwayAsync(state);
+      else stateStorer.storeAway(state);
     });
     if (debug != null) {
-      debug.accept(getConsoleSender(), unloadedStates.size() + " states were removed from world " + ChatColor.RED + event.getWorld().getName() + " in " + (currentTimeMillis() - removeTime) + " ms.");
+      debug.accept(getConsoleSender(), unloadedStates.size() + " states were removed from world " + ChatColor.RED + world + " in " + (currentTimeMillis() - removeTime) + " ms.");
     }
-  }
-
-  @SuppressWarnings("unchecked cast")
-  private <T extends Event> void listen(Class<T> clazz, Consumer<T> handler) {
-    getServer().getPluginManager().registerEvent(clazz, new Listener() {
-    }, EventPriority.NORMAL, (listener, event) -> handler.accept((T) event), this.plugin);
   }
 
   private static String removeTimeMsg(long removeTime) {
     return "Multiblock removed in " + ChatColor.LIGHT_PURPLE + (currentTimeMillis() - removeTime) + ChatColor.RESET + " ms";
   }
-  private boolean isTestChunk(Chunk chunk){
-    return chunk.getX()==MultiblockAPI.garbageChunkX && chunk.getZ()==MultiblockAPI.garbageChunkZ;
+
+  private boolean isTestChunk(Chunk chunk) {
+    return chunk.getX() == MultiblockAPI.garbageChunkX && chunk.getZ() == MultiblockAPI.garbageChunkZ;
   }
+
 }
