@@ -46,4 +46,12 @@ public class ToggleableTasks {
   public static Toggleable asyncRepeating(Plugin plugin, long interval, Runnable runnable) {
     return toggleableTask(runnable, run -> getScheduler().runTaskTimerAsynchronously(plugin, run, 0, interval));
   }
+
+  public static Toggleable syncLater(Plugin plugin, long delay, Runnable runnable){
+    return toggleableTask(runnable, run->getScheduler().runTaskLater(plugin, run, delay));
+  }
+
+  public static Toggleable asyncLater(Plugin plugin, long delay, Runnable runnable){
+    return toggleableTask(runnable, run->getScheduler().runTaskLater(plugin, run, delay));
+  }
 }

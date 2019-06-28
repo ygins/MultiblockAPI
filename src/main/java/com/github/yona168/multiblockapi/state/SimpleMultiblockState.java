@@ -4,7 +4,6 @@ import com.github.yona168.multiblockapi.structure.LocationInfo;
 import com.github.yona168.multiblockapi.structure.Multiblock;
 import com.github.yona168.multiblockapi.util.ChunkCoords;
 import com.github.yona168.multiblockapi.util.ThreeDimensionalArrayCoords;
-import com.gitlab.avelyn.architecture.base.Component;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -18,41 +17,40 @@ import java.util.stream.Collectors;
 
 import static java.util.UUID.randomUUID;
 
-public class SimpleMultiblockState extends Component implements MultiblockState {
+public class SimpleMultiblockState implements MultiblockState {
   private final Orientation orientation;
   private final Block bottomLeftBlock;
   private final Location triggerLoc;
-  private final Set<Location> structureBlocks = new HashSet<>();
+  private final Set<Location> structureBlocks;
   private final Set<Location> allBlocks;
   private final Set<ChunkCoords> occupiedChunks;
   private final Chunk triggerChunk;
   private final Multiblock multiblock;
   private final UUID uuid;
 
-  public SimpleMultiblockState(Multiblock multiblock, Orientation orientation, Block bottomLeftBlock, ThreeDimensionalArrayCoords triggerCoords, Material[][][] pattern) {
+  //Whether or not the state exists within the world at the moment (not offloaded)
+  private boolean enabled;
+  //Whether or not the state is destroyed (Multiblock is destroyed)
+  private boolean destroyed;
+
+  public SimpleMultiblockState(Multiblock multiblock, Orientation orientation, Block bottomLeftBlock, Set<Location> allBlocks, ThreeDimensionalArrayCoords triggerCoords, Material[][][] pattern) {
     this.uuid = randomUUID();
+    this.enabled = false;
+    this.destroyed = false;
     this.multiblock = multiblock;
     this.orientation = orientation;
     this.bottomLeftBlock = bottomLeftBlock;
     this.triggerLoc = orientation.getBlock(triggerCoords.getY(), triggerCoords.getRow(), triggerCoords.getColumn(), bottomLeftBlock).getLocation();
-    for (int level = 0; level < pattern.length; level++) {
-      for (int row = 0; row < pattern[0].length; row++) {
-        for (int column = 0; column < pattern[0][0].length; column++) {
-          final Block block = orientation.getBlock(level, row, column, bottomLeftBlock);
-          if (pattern[level][row][column] != null && !(triggerCoords.getY() == level && triggerCoords.getRow() == row && triggerCoords.getColumn() == column)) {
-            structureBlocks.add(block.getLocation());
-          }
-        }
-      }
-    }
-    allBlocks = new HashSet<>(structureBlocks);
-    allBlocks.add(triggerLoc);
+    this.allBlocks=allBlocks;
+    Set<Location> allBlocksCopy=new HashSet<>(allBlocks);
+    allBlocksCopy.remove(triggerLoc);
+    this.structureBlocks=allBlocksCopy;
     occupiedChunks = allBlocks.stream().map(Location::getChunk).map(ChunkCoords::fromChunk).collect(Collectors.toSet());
     this.triggerChunk = triggerLoc.getChunk();
   }
 
   public SimpleMultiblockState(Multiblock multiblock, LocationInfo locInfo) {
-    this(multiblock, locInfo.getOrientation(), locInfo.getBottomLeftCorner(), multiblock.getTriggerCoords(), multiblock.getPattern());
+    this(multiblock, locInfo.getOrientation(), locInfo.getBottomLeftCorner(), locInfo.getAllBlockLocations(), multiblock.getTriggerCoords(), multiblock.getPattern());
   }
 
   @Override
@@ -101,6 +99,63 @@ public class SimpleMultiblockState extends Component implements MultiblockState 
   }
 
   @Override
+  public boolean isDestroyed() {
+    return destroyed;
+  }
+
+  @Override
+  public void destroy() {
+    if (destroyed) {
+      throw new IllegalStateException("This State is already destroyed!");
+    } else {
+      onDestroy();
+      destroyed = true;
+    }
+  }
+
+  @Override
+  public void onDestroy() {
+
+  }
+
+  @Override
+  public MultiblockState enable() {
+    if (isEnabled()) {
+      throw new IllegalStateException("This state is already enabled!");
+    } else {
+      onEnable();
+      enabled = true;
+      return this;
+    }
+  }
+
+  @Override
+  public MultiblockState disable() {
+    if (!isEnabled()) {
+      throw new IllegalStateException("This state is already disabled!");
+    } else {
+      onDisable();
+      enabled = false;
+      return this;
+    }
+  }
+
+  @Override
+  public void onEnable() {
+
+  }
+
+  @Override
+  public void onDisable() {
+
+  }
+
+  @Override
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  @Override
   public int hashCode() {
     return Objects.hash(orientation, triggerLoc, bottomLeftBlock, allBlocks, multiblock);
   }
@@ -116,5 +171,6 @@ public class SimpleMultiblockState extends Component implements MultiblockState 
     }
     return true;
   }
+
 
 }

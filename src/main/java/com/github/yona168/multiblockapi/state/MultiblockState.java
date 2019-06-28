@@ -35,6 +35,14 @@ public interface MultiblockState extends Toggleable {
     return getTriggerBlockLoc().getWorld();
   }
 
+  void onEnable();
+  void onDisable();
+
+  void destroy();
+  void onDestroy();
+
+  boolean isDestroyed();
+
   enum Orientation {
     NORTH {
       @Override

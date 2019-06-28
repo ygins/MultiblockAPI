@@ -3,8 +3,8 @@ package com.github.yona168.multiblockapi;
 import com.github.yona168.multiblockapi.pattern.PatternCreator;
 import com.github.yona168.multiblockapi.registry.MultiblockRegistry;
 import com.github.yona168.multiblockapi.registry.SimpleMultiblockRegistry;
-import com.github.yona168.multiblockapi.registry.storage.KryoStateStorer;
-import com.github.yona168.multiblockapi.registry.storage.kryo.Kryogenic;
+import com.github.yona168.multiblockapi.storage.*;
+import com.github.yona168.multiblockapi.storage.kryo.Kryogenic;
 import com.github.yona168.multiblockapi.state.IntState;
 import com.github.yona168.multiblockapi.state.SimpleMultiblockState;
 import com.github.yona168.multiblockapi.structure.Multiblock;
@@ -14,6 +14,7 @@ import com.gitlab.avelyn.core.components.ComponentPlugin;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -30,18 +31,22 @@ public class MultiblockAPI extends ComponentPlugin {
   public static int garbageChunkX;
   public static int garbageChunkZ;
   private Location tempLoc;
-  private MultiblockRegistry multiblockRegistry;
+  private final MultiblockRegistry multiblockRegistry;
+  private final DataTunnelRegistry dataTunnelRegistry;
+  private final StateCache stateCache;
 
   public MultiblockAPI() {
-    multiblockRegistry = new SimpleMultiblockRegistry(new KryoStateStorer(getDataFolder().toPath().resolve("chunks"), this), (sender, str) -> broadcastMessage(str));
-    addChild(multiblockRegistry);
+    multiblockRegistry = new SimpleMultiblockRegistry();
+    stateCache = new SimpleStateCache();
+    dataTunnelRegistry = new SimpleDataTunnelRegistry();
+    addChild(new StateLoaderListeners(stateCache, multiblockRegistry, dataTunnelRegistry, this, ($, str) -> broadcastMessage(str)));
     onEnable(() -> {
-      Kryogenic.init(multiblockRegistry);
       final Material[][][] pattern = new PatternCreator(2, 3, 2).level(0)
               .set(0, 0, Material.OAK_PLANKS).set(1, 0, Material.BIRCH_PLANKS).set(1, 1, Material.OAK_PLANKS)
               .level(1).set(1, 1, Material.OBSIDIAN).getPattern();
       final ThreeDimensionalArrayCoords triggerCoords = new ThreeDimensionalArrayCoords(1, 1, 1);
-      final Multiblock<IntState> testMultiblock = new SimpleMultiblock<>("one", pattern, triggerCoords, IntState::new);
+      final NamespacedKey multiblockId = new NamespacedKey(this, "testOne");
+      final Multiblock<IntState> testMultiblock = new SimpleMultiblock<>(multiblockId, StateDataTunnels.kryo(), pattern, triggerCoords, IntState::new);
       testMultiblock.onClick((event, state) -> {
         state.toggle();
         broadcastMessage("State toggled to " + state.getInt());
@@ -51,7 +56,8 @@ public class MultiblockAPI extends ComponentPlugin {
               .fillLevel(Material.OAK_PLANKS).level(2).fillLevel(Material.OAK_PLANKS).level(3).fillLevel(Material.OAK_PLANKS).level(4)
               .set(4, 2, Material.BIRCH_PLANKS).getPattern();
       final ThreeDimensionalArrayCoords triggerCoordsTwo = new ThreeDimensionalArrayCoords(4, 4, 2);
-      final Multiblock<SimpleMultiblockState> testMultiblockTwo = new SimpleMultiblock<>("two", patternTwo, triggerCoordsTwo, SimpleMultiblockState::new);
+      final NamespacedKey namespacedKey = new NamespacedKey(this, "testTwo");
+      final Multiblock<SimpleMultiblockState> testMultiblockTwo = new SimpleMultiblock<>(namespacedKey, StateDataTunnels.kryo(), patternTwo, triggerCoordsTwo, SimpleMultiblockState::new);
       multiblockRegistry.register(testMultiblock, this);
       multiblockRegistry.register(testMultiblockTwo, this);
 
@@ -60,9 +66,10 @@ public class MultiblockAPI extends ComponentPlugin {
       getCommand("myhome").setExecutor(new MyHome());
     });
 
+    onDisable(()->getLogger().info("DISABLING"));
+
 
   }
-
   private class ChunkUnloader implements CommandExecutor {
     private Chunk chunk;
 

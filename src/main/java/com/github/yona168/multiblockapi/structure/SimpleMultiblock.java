@@ -2,9 +2,11 @@ package com.github.yona168.multiblockapi.structure;
 
 import com.github.yona168.multiblockapi.state.MultiblockState;
 import com.github.yona168.multiblockapi.state.SimpleMultiblockState;
+import com.github.yona168.multiblockapi.storage.StateDataTunnel;
 import com.github.yona168.multiblockapi.util.ThreeDimensionalArrayCoords;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.event.player.PlayerInteractEvent;
 
@@ -22,15 +24,17 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
   private final Material[][][] pattern;
   private final Set<BiConsumer<PlayerInteractEvent, T>> eventConsumers;
   private final BiFunction<SimpleMultiblock<T>, LocationInfo, T> stateCreator;
-  private final String id;
+  private final NamespacedKey id;
+  private final StateDataTunnel dataTunnel;
 
-  public SimpleMultiblock(String id, Material[][][] pattern, ThreeDimensionalArrayCoords coords, BiFunction<SimpleMultiblock<T>, LocationInfo, T> stateCreator) {
+  public SimpleMultiblock(NamespacedKey id, StateDataTunnel dataTunnel, Material[][][] pattern, ThreeDimensionalArrayCoords coords, BiFunction<SimpleMultiblock<T>, LocationInfo, T> stateCreator) {
     this.eventConsumers = new HashSet<>();
     this.pattern = pattern;
     this.triggerCoords = coords;
     this.trigger = ThreeDimensionalArrayCoords.get(pattern, coords);
     this.stateCreator = stateCreator;
     this.id=id;
+    this.dataTunnel=dataTunnel;
   }
 
   @Override
@@ -46,35 +50,46 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
       boolean northValid = true;
       boolean westValid = true;
       boolean eastValid = true;
+      Set<Location> allBlockLocations=new HashSet<>();
       south:
       for (int y = 0; y < pattern.length; y++) {
         for (int r = 0; r < pattern[0].length; r++) {
           for (int c = 0; c < pattern[0][0].length; c++) {
             final Material targetMaterial = pattern[y][r][c];
-            if (targetMaterial != null && targetMaterial != facingSouthBottomLeft.getRelative(-c, y, -r).getType()) {
-              southValid = false;
-              break south;
+            if (targetMaterial != null) {
+              final Block relativeBlock = facingSouthBottomLeft.getRelative(-c, y, -r);
+              if (targetMaterial != relativeBlock.getType()) {
+                southValid = false;
+                allBlockLocations.clear();
+                break south;
+              }
+              allBlockLocations.add(relativeBlock.getLocation());
             }
           }
         }
       }
       if (southValid)
-        return Optional.of(stateCreator.apply(this, new LocationInfo(facingSouthBottomLeft, SimpleMultiblockState.Orientation.SOUTH)));
+        return Optional.of(stateCreator.apply(this, new LocationInfo(facingSouthBottomLeft, allBlockLocations,SimpleMultiblockState.Orientation.SOUTH)));
       final Block facingNorthBottomLeft = clickedLoc.clone().add(-triggerCoords.getColumn(), -triggerCoords.getY(), -triggerCoords.getRow()).getBlock();
       north:
       for (int y = 0; y < pattern.length; y++) {
         for (int r = 0; r < pattern[0].length; r++) {
           for (int c = 0; c < pattern[0][0].length; c++) {
             final Material targetMaterial = pattern[y][r][c];
-            if (targetMaterial != null && targetMaterial != facingNorthBottomLeft.getRelative(c, y, r).getType()) {
-              northValid = false;
-              break north;
+            if (targetMaterial != null) {
+              Block relativeBlock = facingNorthBottomLeft.getRelative(c, y, r);
+              if (targetMaterial != relativeBlock.getType()) {
+                northValid = false;
+                allBlockLocations.clear();
+                break north;
+              }
+              allBlockLocations.add(relativeBlock.getLocation());
             }
           }
         }
       }
       if (northValid)
-        return Optional.of(stateCreator.apply(this, new LocationInfo(facingNorthBottomLeft, SimpleMultiblockState.Orientation.NORTH)));
+        return Optional.of(stateCreator.apply(this, new LocationInfo(facingNorthBottomLeft, allBlockLocations,SimpleMultiblockState.Orientation.NORTH)));
 
       final Block facingEastBottomLeft = clickedLoc.clone().add(triggerCoords.getRow(), -triggerCoords.getY(), -triggerCoords.getColumn()).getBlock();
       east:
@@ -82,15 +97,20 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
         for (int r = 0; r < pattern[0].length; r++) {
           for (int c = 0; c < pattern[0][0].length; c++) {
             final Material targetMaterial = pattern[y][r][c];
-            if (targetMaterial != null && targetMaterial != facingEastBottomLeft.getRelative(-r, y, c).getType()) {
-              eastValid = false;
-              break east;
+            if (targetMaterial != null) {
+              Block relativeBlock = facingEastBottomLeft.getRelative(-r, y, c);
+              if (targetMaterial != relativeBlock.getType()) {
+                eastValid = false;
+                allBlockLocations.clear();
+                break east;
+              }
+              allBlockLocations.add(relativeBlock.getLocation());
             }
           }
         }
       }
       if (eastValid)
-        return Optional.of(stateCreator.apply(this, new LocationInfo(facingEastBottomLeft, SimpleMultiblockState.Orientation.EAST)));
+        return Optional.of(stateCreator.apply(this, new LocationInfo(facingEastBottomLeft, allBlockLocations, SimpleMultiblockState.Orientation.EAST)));
 
       final Block facingWestBottomLeft = clickedLoc.clone().add(-triggerCoords.getRow(), -triggerCoords.getY(), triggerCoords.getColumn()).getBlock();
       west:
@@ -98,15 +118,20 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
         for (int r = 0; r < pattern[0].length; r++) {
           for (int c = 0; c < pattern[0][0].length; c++) {
             final Material targetMaterial = pattern[y][r][c];
-            if (targetMaterial != null && targetMaterial != facingWestBottomLeft.getRelative(r, y, -c).getType()) {
-              westValid = false;
-              break west;
+            if (targetMaterial != null) {
+              Block relativeBlock = facingWestBottomLeft.getRelative(r, y, -c);
+              if (targetMaterial != relativeBlock.getType()) {
+                westValid = false;
+                allBlockLocations.clear();
+                break west;
+              }
+              allBlockLocations.add(relativeBlock.getLocation());
             }
           }
         }
       }
       if (westValid)
-        return Optional.of(stateCreator.apply(this, new LocationInfo(facingWestBottomLeft, SimpleMultiblockState.Orientation.WEST)));
+        return Optional.of(stateCreator.apply(this, new LocationInfo(facingWestBottomLeft, allBlockLocations, SimpleMultiblockState.Orientation.WEST)));
     }
     return empty();
   }
@@ -133,7 +158,12 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
   }
 
   @Override
-  public String getId() {
+  public NamespacedKey getId() {
     return this.id;
+  }
+
+  @Override
+  public StateDataTunnel getDataTunnel() {
+    return dataTunnel;
   }
 }

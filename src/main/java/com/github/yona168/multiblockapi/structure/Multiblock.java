@@ -1,8 +1,10 @@
 package com.github.yona168.multiblockapi.structure;
 
 import com.github.yona168.multiblockapi.state.MultiblockState;
+import com.github.yona168.multiblockapi.storage.StateDataTunnel;
 import com.github.yona168.multiblockapi.util.ThreeDimensionalArrayCoords;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.event.player.PlayerInteractEvent;
 
@@ -21,5 +23,7 @@ public interface Multiblock<T extends MultiblockState> {
 
   ThreeDimensionalArrayCoords getTriggerCoords();
 
-  String getId();
+  NamespacedKey getId();
+
+  StateDataTunnel getDataTunnel();
 }
