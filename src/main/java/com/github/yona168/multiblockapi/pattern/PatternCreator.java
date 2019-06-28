@@ -1,5 +1,6 @@
 package com.github.yona168.multiblockapi.pattern;
 
+import com.github.yona168.multiblockapi.util.ThreeDimensionalArrayCoords;
 import org.bukkit.Material;
 
 public class PatternCreator {
@@ -53,8 +54,8 @@ public class PatternCreator {
     return new SetYPatternCreator(pattern, y);
   }
 
-  public Material[][][] getPattern() {
-    return pattern;
+  public Pattern triggerCoords(int y, int x, int z) {
+    return Pattern.of(this.pattern,new ThreeDimensionalArrayCoords(y,x,z));
   }
 
   public static class SetYPatternCreator extends PatternCreator {

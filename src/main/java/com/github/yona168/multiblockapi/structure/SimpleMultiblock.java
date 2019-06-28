@@ -1,5 +1,6 @@
 package com.github.yona168.multiblockapi.structure;
 
+import com.github.yona168.multiblockapi.pattern.Pattern;
 import com.github.yona168.multiblockapi.state.MultiblockState;
 import com.github.yona168.multiblockapi.state.SimpleMultiblockState;
 import com.github.yona168.multiblockapi.storage.StateDataTunnel;
@@ -20,18 +21,16 @@ import static java.util.Optional.empty;
 
 public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T> {
   private final Material trigger;
-  private final ThreeDimensionalArrayCoords triggerCoords;
-  private final Material[][][] pattern;
+  private final Pattern pattern;
   private final Set<BiConsumer<PlayerInteractEvent, T>> eventConsumers;
   private final BiFunction<SimpleMultiblock<T>, LocationInfo, T> stateCreator;
   private final NamespacedKey id;
   private final StateDataTunnel dataTunnel;
 
-  public SimpleMultiblock(NamespacedKey id, StateDataTunnel dataTunnel, Material[][][] pattern, ThreeDimensionalArrayCoords coords, BiFunction<SimpleMultiblock<T>, LocationInfo, T> stateCreator) {
+  public SimpleMultiblock(Pattern pattern,NamespacedKey id, StateDataTunnel dataTunnel,BiFunction<SimpleMultiblock<T>, LocationInfo, T> stateCreator) {
     this.eventConsumers = new HashSet<>();
     this.pattern = pattern;
-    this.triggerCoords = coords;
-    this.trigger = ThreeDimensionalArrayCoords.get(pattern, coords);
+    this.trigger = ThreeDimensionalArrayCoords.get(pattern, pattern.getTriggerCoords());
     this.stateCreator = stateCreator;
     this.id=id;
     this.dataTunnel=dataTunnel;
@@ -42,9 +41,9 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
     if (event.getClickedBlock() == null || event.getClickedBlock().getType() != trigger) {
       return empty();
     } else {
-      final Material[][][] pattern = getPattern();
+      final Material[][][] pattern = getPattern().asArray();
       final Location clickedLoc = event.getClickedBlock().getLocation();
-      final ThreeDimensionalArrayCoords triggerCoords = this.triggerCoords;
+      final ThreeDimensionalArrayCoords triggerCoords = this.pattern.getTriggerCoords();
       final Block facingSouthBottomLeft = clickedLoc.clone().add(triggerCoords.getColumn(), -triggerCoords.getY(), triggerCoords.getRow()).getBlock();
       boolean southValid = true;
       boolean northValid = true;
@@ -148,13 +147,8 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
   }
 
   @Override
-  public Material[][][] getPattern() {
+  public Pattern getPattern() {
     return pattern;
-  }
-
-  @Override
-  public ThreeDimensionalArrayCoords getTriggerCoords() {
-    return this.triggerCoords;
   }
 
   @Override

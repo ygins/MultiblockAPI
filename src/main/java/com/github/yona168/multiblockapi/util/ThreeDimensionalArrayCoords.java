@@ -1,5 +1,8 @@
 package com.github.yona168.multiblockapi.util;
 
+import com.github.yona168.multiblockapi.pattern.Pattern;
+import org.bukkit.Material;
+
 public class ThreeDimensionalArrayCoords {
   private final int x;
   private final int y;
@@ -25,5 +28,9 @@ public class ThreeDimensionalArrayCoords {
 
   public static <T> T get(T[][][] arr, ThreeDimensionalArrayCoords coords) {
     return arr[coords.y][coords.x][coords.z];
+  }
+
+  public static Material get(Pattern pattern, ThreeDimensionalArrayCoords coords) {
+    return get(pattern.asArray(), coords);
   }
 }

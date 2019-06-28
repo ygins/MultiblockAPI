@@ -1,5 +1,6 @@
 package com.github.yona168.multiblockapi.structure;
 
+import com.github.yona168.multiblockapi.pattern.Pattern;
 import com.github.yona168.multiblockapi.state.MultiblockState;
 import com.github.yona168.multiblockapi.storage.StateDataTunnel;
 import com.github.yona168.multiblockapi.util.ThreeDimensionalArrayCoords;
@@ -19,9 +20,7 @@ public interface Multiblock<T extends MultiblockState> {
 
   void doClickActions(PlayerInteractEvent event, T state);
 
-  Material[][][] getPattern();
-
-  ThreeDimensionalArrayCoords getTriggerCoords();
+  Pattern getPattern();
 
   NamespacedKey getId();
 

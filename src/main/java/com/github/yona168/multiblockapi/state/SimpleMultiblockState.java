@@ -1,5 +1,6 @@
 package com.github.yona168.multiblockapi.state;
 
+import com.github.yona168.multiblockapi.pattern.Pattern;
 import com.github.yona168.multiblockapi.structure.LocationInfo;
 import com.github.yona168.multiblockapi.structure.Multiblock;
 import com.github.yona168.multiblockapi.util.ChunkCoords;
@@ -33,13 +34,14 @@ public class SimpleMultiblockState implements MultiblockState {
   //Whether or not the state is destroyed (Multiblock is destroyed)
   private boolean destroyed;
 
-  public SimpleMultiblockState(Multiblock multiblock, Orientation orientation, Block bottomLeftBlock, Set<Location> allBlocks, ThreeDimensionalArrayCoords triggerCoords, Material[][][] pattern) {
+  public SimpleMultiblockState(Multiblock multiblock, Orientation orientation, Block bottomLeftBlock, Set<Location> allBlocks, Pattern pattern) {
     this.uuid = randomUUID();
     this.enabled = false;
     this.destroyed = false;
     this.multiblock = multiblock;
     this.orientation = orientation;
     this.bottomLeftBlock = bottomLeftBlock;
+    ThreeDimensionalArrayCoords triggerCoords=pattern.getTriggerCoords();
     this.triggerLoc = orientation.getBlock(triggerCoords.getY(), triggerCoords.getRow(), triggerCoords.getColumn(), bottomLeftBlock).getLocation();
     this.allBlocks=allBlocks;
     Set<Location> allBlocksCopy=new HashSet<>(allBlocks);
@@ -50,7 +52,7 @@ public class SimpleMultiblockState implements MultiblockState {
   }
 
   public SimpleMultiblockState(Multiblock multiblock, LocationInfo locInfo) {
-    this(multiblock, locInfo.getOrientation(), locInfo.getBottomLeftCorner(), locInfo.getAllBlockLocations(), multiblock.getTriggerCoords(), multiblock.getPattern());
+    this(multiblock, locInfo.getOrientation(), locInfo.getBottomLeftCorner(), locInfo.getAllBlockLocations(),multiblock.getPattern());
   }
 
   @Override

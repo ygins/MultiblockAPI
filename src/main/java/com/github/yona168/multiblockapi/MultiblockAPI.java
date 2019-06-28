@@ -1,5 +1,6 @@
 package com.github.yona168.multiblockapi;
 
+import com.github.yona168.multiblockapi.pattern.Pattern;
 import com.github.yona168.multiblockapi.pattern.PatternCreator;
 import com.github.yona168.multiblockapi.registry.MultiblockRegistry;
 import com.github.yona168.multiblockapi.registry.SimpleMultiblockRegistry;
@@ -41,23 +42,22 @@ public class MultiblockAPI extends ComponentPlugin {
     dataTunnelRegistry = new SimpleDataTunnelRegistry();
     addChild(new StateLoaderListeners(stateCache, multiblockRegistry, dataTunnelRegistry, this, ($, str) -> broadcastMessage(str)));
     onEnable(() -> {
-      final Material[][][] pattern = new PatternCreator(2, 3, 2).level(0)
+      final Pattern pattern = new PatternCreator(2, 3, 2).level(0)
               .set(0, 0, Material.OAK_PLANKS).set(1, 0, Material.BIRCH_PLANKS).set(1, 1, Material.OAK_PLANKS)
-              .level(1).set(1, 1, Material.OBSIDIAN).getPattern();
-      final ThreeDimensionalArrayCoords triggerCoords = new ThreeDimensionalArrayCoords(1, 1, 1);
+              .level(1).set(1, 1, Material.OBSIDIAN).triggerCoords(1,1,1);
       final NamespacedKey multiblockId = new NamespacedKey(this, "testOne");
-      final Multiblock<IntState> testMultiblock = new SimpleMultiblock<>(multiblockId, StateDataTunnels.kryo(), pattern, triggerCoords, IntState::new);
+      final Multiblock<IntState> testMultiblock = new SimpleMultiblock<>(pattern, multiblockId, StateDataTunnels.kryo(), IntState::new);
       testMultiblock.onClick((event, state) -> {
         state.toggle();
         broadcastMessage("State toggled to " + state.getInt());
       });
 
-      final Material[][][] patternTwo = new PatternCreator(5, 5, 5).level(0).fillLevel(Material.OAK_PLANKS).level(1)
+      final Pattern patternTwo = new PatternCreator(5, 5, 5).level(0).fillLevel(Material.OAK_PLANKS).level(1)
               .fillLevel(Material.OAK_PLANKS).level(2).fillLevel(Material.OAK_PLANKS).level(3).fillLevel(Material.OAK_PLANKS).level(4)
-              .set(4, 2, Material.BIRCH_PLANKS).getPattern();
-      final ThreeDimensionalArrayCoords triggerCoordsTwo = new ThreeDimensionalArrayCoords(4, 4, 2);
+              .set(4, 2, Material.BIRCH_PLANKS).triggerCoords(4,4,2);
       final NamespacedKey namespacedKey = new NamespacedKey(this, "testTwo");
-      final Multiblock<SimpleMultiblockState> testMultiblockTwo = new SimpleMultiblock<>(namespacedKey, StateDataTunnels.kryo(), patternTwo, triggerCoordsTwo, SimpleMultiblockState::new);
+      final Multiblock<SimpleMultiblockState> testMultiblockTwo = new SimpleMultiblock<>(patternTwo,namespacedKey, StateDataTunnels.kryo(), SimpleMultiblockState::new);
+      testMultiblockTwo.onClick((event, state)->broadcastMessage("CLICKED"));
       multiblockRegistry.register(testMultiblock, this);
       multiblockRegistry.register(testMultiblockTwo, this);
 
