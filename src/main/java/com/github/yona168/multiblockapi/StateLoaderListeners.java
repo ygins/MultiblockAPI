@@ -6,7 +6,6 @@ import com.github.yona168.multiblockapi.state.MultiblockState;
 import com.github.yona168.multiblockapi.storage.DataTunnelRegistry;
 import com.github.yona168.multiblockapi.storage.StateDataTunnel;
 import com.github.yona168.multiblockapi.storage.StateDataTunnels;
-import com.github.yona168.multiblockapi.storage.kryo.Kryogenic;
 import com.gitlab.avelyn.architecture.base.Component;
 import com.gitlab.avelyn.architecture.base.Toggleable;
 import org.bukkit.*;
@@ -30,7 +29,6 @@ import java.util.stream.Collectors;
 import static com.github.yona168.multiblockapi.util.ToggleableTasks.syncLater;
 import static com.gitlab.avelyn.core.base.Events.listen;
 import static java.lang.System.currentTimeMillis;
-import static java.util.stream.Collectors.toList;
 import static org.bukkit.Bukkit.*;
 
 public class StateLoaderListeners extends Component {
@@ -47,7 +45,7 @@ public class StateLoaderListeners extends Component {
     this.dataTunnelRegistry = storageMethodRegistry;
     this.multiblockRegistry = multiblockRegistry;
     addChild(multiblockRegistry);
-    addChild(StateDataTunnels.component(plugin, multiblockRegistry));
+    addChild(StateDataTunnels.enabler(plugin, multiblockRegistry));
     addChild(listen(PlayerInteractEvent.class, this::handleInteract));
     addChild(listen(BlockBreakEvent.class, EventPriority.MONITOR, this::handleBlockBreak));
     addChild(listen(EntityExplodeEvent.class, EventPriority.MONITOR, this::handleEntityExplode));

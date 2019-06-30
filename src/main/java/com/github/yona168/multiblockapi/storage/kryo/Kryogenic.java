@@ -45,7 +45,7 @@ public class Kryogenic {
     return KRYO;
   }
 
-  public static Toggleable toggleable(MultiblockRegistry multiblockRegistry) {
+  public static Toggleable enabler(MultiblockRegistry multiblockRegistry) {
     Component component = new Component();
     component.onEnable(() ->KRYO=new Kryo());
     component.onEnable(()->init(multiblockRegistry));

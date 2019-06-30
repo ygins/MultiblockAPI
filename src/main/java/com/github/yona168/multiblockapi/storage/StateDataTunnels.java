@@ -9,11 +9,11 @@ import org.bukkit.plugin.Plugin;
 public class StateDataTunnels {
   private static StateDataTunnel kryo;
 
-  public static Toggleable component(Plugin plugin, MultiblockRegistry multiblockRegistry) {
+  public static Toggleable enabler(Plugin plugin, MultiblockRegistry multiblockRegistry) {
     Component component = new Component()
             .onEnable(() -> kryo = new KryoDataTunnel(plugin.getDataFolder().toPath().resolve("chunks"), plugin))
             .onDisable(() -> kryo = null);
-    component.addChild(Kryogenic.toggleable(multiblockRegistry));
+    component.addChild(Kryogenic.enabler(multiblockRegistry));
     return component;
   }
 
