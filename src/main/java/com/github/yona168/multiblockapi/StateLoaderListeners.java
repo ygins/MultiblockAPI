@@ -84,6 +84,7 @@ public class StateLoaderListeners extends Component {
         stateCache.store(multiblockState);
         (multiblockState).enable();
         multiblockState.getMultiblock().doClickActions(event, multiblockState);
+        multiblockState.getMultiblock().getDataTunnel().storeAwayAsync(multiblockState);
         if (debug != null) {
           long difference = currentTimeMillis() - before;
           debug.accept(event.getPlayer(), "Multiblock has been registered, and the whole process took " + ChatColor.LIGHT_PURPLE + difference + ChatColor.RESET + " millis");
