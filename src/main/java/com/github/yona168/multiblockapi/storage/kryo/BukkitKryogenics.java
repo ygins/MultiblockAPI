@@ -12,6 +12,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
 
 import java.lang.Class;
 import java.util.Map;
@@ -121,12 +122,12 @@ public class BukkitKryogenics {
     final Serializer<Block> blockSerializer = new Serializer<Block>() {
       @Override
       public void write(Kryo kryo, Output output, Block object) {
-        kryo.writeClassAndObject(output, object.getLocation().serialize());
+        kryo.writeClassAndObject(output, object.getLocation());
       }
 
       @Override
       public Block read(Kryo kryo, Input input, Class type) {
-        return Location.deserialize((Map<String, Object>) kryo.readClassAndObject(input)).getBlock();
+        return ((Location)kryo.readClassAndObject(input)).getBlock();
       }
     };
     kryo.register(Block.class, blockSerializer);
@@ -173,6 +174,19 @@ public class BukkitKryogenics {
       @SuppressWarnings("deprecated")
       public NamespacedKey read(Kryo kryo, Input input, Class<? extends NamespacedKey> type) {
         return new NamespacedKey(input.readString(), input.readString());
+      }
+    });
+
+    kryo.addDefaultSerializer(Plugin.class,new Serializer<Plugin>(){
+
+      @Override
+      public void write(Kryo kryo, Output output, Plugin object) {
+        output.writeString(object.getName());
+      }
+
+      @Override
+      public Plugin read(Kryo kryo, Input input, Class<? extends Plugin> type) {
+        return Bukkit.getPluginManager().getPlugin(input.readString());
       }
     });
   }

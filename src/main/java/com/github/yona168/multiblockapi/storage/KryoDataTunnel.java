@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashSet;
 
+import static com.github.yona168.multiblockapi.storage.kryo.Kryogenic.getNextKryo;
 import static java.nio.file.Files.*;
 import static java.util.stream.Collectors.toSet;
 
@@ -26,11 +27,6 @@ public class KryoDataTunnel extends AbstractDataTunnel {
   }
 
   @Override
-  public void onRegister(Multiblock multiblock) {
-    Kryogenic.getKryo().register(multiblock.getClass());
-  }
-
-  @Override
   public void initStoreAway(MultiblockState state) {
     if (state.isEnabled()) {
       throw new IllegalStateException("Enabled state is tryna be stored!");
@@ -40,7 +36,7 @@ public class KryoDataTunnel extends AbstractDataTunnel {
     createDirIfNotExists(targetChunkFolder);
     final Path targetFile = targetChunkFolder.resolve(state.getUniqueid().toString());
     try {
-      Kryogenic.freeze(targetFile, state);
+      Kryogenic.freeze(getNextKryo(),targetFile, state);
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -56,7 +52,7 @@ public class KryoDataTunnel extends AbstractDataTunnel {
       }
       return list(targetDir).map(path -> {
         try {
-          MultiblockState state = Kryogenic.thaw(path);
+          MultiblockState state = Kryogenic.thaw(getNextKryo(), path);
           return state;
         } catch (IOException e) {
           throw new RuntimeException("Error with Kryo parsing!");

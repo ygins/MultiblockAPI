@@ -8,6 +8,7 @@ import com.esotericsoftware.kryo.serializers.DefaultSerializers;
 import com.esotericsoftware.kryo.unsafe.UnsafeInput;
 import com.esotericsoftware.kryo.unsafe.UnsafeOutput;
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
+import com.esotericsoftware.kryo.util.Pool;
 import com.github.yona168.multiblockapi.registry.MultiblockRegistry;
 import com.github.yona168.multiblockapi.state.MultiblockState;
 import com.github.yona168.multiblockapi.structure.Multiblock;
@@ -39,21 +40,28 @@ import static org.bukkit.Bukkit.getWorld;
 public class Kryogenic {
 
 
-  private static Kryo KRYO;
+  private static Pool<Kryo> kryoPool;
 
-  public static Kryo getKryo() {
-    return KRYO;
+  public static Pool<Kryo> getKryoPool() {
+    return kryoPool;
   }
+  public static Kryo getNextKryo(){return getKryoPool().obtain();}
 
   public static Toggleable enabler(MultiblockRegistry multiblockRegistry) {
     Component component = new Component();
-    component.onEnable(() ->KRYO=new Kryo());
-    component.onEnable(()->init(multiblockRegistry));
-    component.onDisable(()->KRYO=null);
+    component.onEnable(() ->kryoPool=new Pool<Kryo>(true,false, 32) {
+      @Override
+      protected Kryo create() {
+        final Kryo kryo=new Kryo();
+        init(multiblockRegistry,kryo);
+        return kryo;
+      }
+    });
+    component.onDisable(()->kryoPool=null);
     return component;
   }
 
-  private static void init(MultiblockRegistry multiblockRegistry) {
+  private static void init(MultiblockRegistry multiblockRegistry, Kryo KRYO) {
     KRYO.setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
     KRYO.setRegistrationRequired(false);
     BukkitKryogenics.registerSerializers(KRYO);
@@ -133,47 +141,43 @@ public class Kryogenic {
   }
 
   //--Path--
-  public static void freeze(Path file, Object value) throws IOException {
+  public static void freeze(Kryo kryo,Path file, Object value) throws IOException {
     if (file.getParent() != null)
       createDirectories(file.getParent());
-    freeze(newOutputStream(file), value);
+    freeze(kryo,newOutputStream(file), value);
   }
 
-  public static <Type> Type thaw(Path file) throws IOException {
-    return thaw(file, () -> null);
+  public static <Type> Type thaw(Kryo kryo,Path file) throws IOException {
+    return thaw(kryo,file, () -> null);
   }
 
-  public static <Type> Type thaw(Path file, Type defaultValue) throws IOException {
-    return thaw(file, () -> defaultValue);
+  public static <Type> Type thaw(Kryo kryo,Path file, Type defaultValue) throws IOException {
+    return thaw(kryo,file, () -> defaultValue);
   }
 
-  public static <Type> Type thaw(Path file, Supplier<Type> defaultSupplier) throws IOException {
-    return isRegularFile(file) ? thaw(newInputStream(file), defaultSupplier) : defaultSupplier.get();
+  public static <Type> Type thaw(Kryo kryo,Path file, Supplier<Type> defaultSupplier) throws IOException {
+    return isRegularFile(file) ? thaw(kryo,newInputStream(file), defaultSupplier) : defaultSupplier.get();
   }
 
   //--IO--
-  public static void freeze(OutputStream output, Object value) {
+  public static void freeze(Kryo kryo,OutputStream output, Object value) {
     try (final Output out = new UnsafeOutput(output)) {
-      KRYO.writeClassAndObject(out, value);
+      kryo.writeClassAndObject(out, value);
     }
   }
 
-  public static <Type> Type thaw(InputStream input) {
-    return thaw(input, () -> null);
+  public static <Type> Type thaw(Kryo kryo,InputStream input) {
+    return thaw(kryo,input, () -> null);
   }
 
-  public static <Type> Type thaw(InputStream input, Type defaultValue) {
-    return thaw(input, () -> defaultValue);
+  public static <Type> Type thaw(Kryo kryo,InputStream input, Type defaultValue) {
+    return thaw(kryo,input, () -> defaultValue);
   }
 
-  public static <Type> Type thaw(InputStream input, Supplier<Type> defaultSupplier) {
+  public static <Type> Type thaw(Kryo kryo,InputStream input, Supplier<Type> defaultSupplier) {
     try (final Input in = new UnsafeInput(input)) {
-      final Type value = (Type) KRYO.readClassAndObject(in);
+      final Type value = (Type) kryo.readClassAndObject(in);
       return value == null ? defaultSupplier.get() : value;
     }
-  }
-
-  public static void register(Class<?> clazz) {
-    KRYO.register(clazz);
   }
 }

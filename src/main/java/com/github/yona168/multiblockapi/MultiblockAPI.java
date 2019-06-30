@@ -4,6 +4,7 @@ import com.github.yona168.multiblockapi.pattern.Pattern;
 import com.github.yona168.multiblockapi.pattern.PatternCreator;
 import com.github.yona168.multiblockapi.registry.MultiblockRegistry;
 import com.github.yona168.multiblockapi.registry.SimpleMultiblockRegistry;
+import com.github.yona168.multiblockapi.state.CountingState;
 import com.github.yona168.multiblockapi.storage.*;
 import com.github.yona168.multiblockapi.storage.kryo.Kryogenic;
 import com.github.yona168.multiblockapi.state.IntState;
@@ -42,41 +43,53 @@ public class MultiblockAPI extends ComponentPlugin {
     onEnable(() -> {
       final Pattern pattern = new PatternCreator(2, 3, 2).level(0)
               .set(0, 0, Material.OAK_PLANKS).set(1, 0, Material.BIRCH_PLANKS).set(1, 1, Material.OAK_PLANKS)
-              .level(1).set(1, 1, Material.OBSIDIAN).triggerCoords(1,1,1);
+              .level(1).set(1, 1, Material.OBSIDIAN).triggerCoords(1, 1, 1);
       final NamespacedKey multiblockId = new NamespacedKey(this, "testOne");
-      StateCreator<IntState> intStateStateCreator=(multiblock,locInfo,event)->new IntState(multiblock,locInfo);
+      StateCreator<IntState> intStateStateCreator = (multiblock, locInfo, event) -> new IntState(multiblock, locInfo);
       final Multiblock<IntState> testMultiblock = new SimpleMultiblock<>(pattern, multiblockId, StateDataTunnels.kryo(), intStateStateCreator);
       testMultiblock.onClick((event, state) -> {
         state.toggle();
         broadcastMessage("State toggled to " + state.getInt());
       });
-      testMultiblock.preStateGenCheck((event, multiblock)->
-        event.getPlayer().getGameMode()== GameMode.CREATIVE
+      testMultiblock.preStateGenCheck((event, multiblock) ->
+              event.getPlayer().getGameMode() == GameMode.CREATIVE
       );
 
-      testMultiblock.postStateGenCheck((event, state)->
-        state.getClass()==IntState.class && event.getPlayer().getInventory().getItemInMainHand().getType()==Material.DIAMOND_HOE
+      testMultiblock.postStateGenCheck((event, state) ->
+              state.getClass() == IntState.class && event.getPlayer().getInventory().getItemInMainHand().getType() == Material.DIAMOND_HOE
       );
 
       final Pattern patternTwo = new PatternCreator(5, 5, 5).level(0).fillLevel(Material.OAK_PLANKS).level(1)
               .fillLevel(Material.OAK_PLANKS).level(2).fillLevel(Material.OAK_PLANKS).level(3).fillLevel(Material.OAK_PLANKS).level(4)
-              .set(4, 2, Material.BIRCH_PLANKS).triggerCoords(4,4,2);
+              .set(4, 2, Material.BIRCH_PLANKS).triggerCoords(4, 4, 2);
       final NamespacedKey namespacedKey = new NamespacedKey(this, "testTwo");
-      StateCreator<SimpleMultiblockState> creator=(multiblock,locInfo,event)->new SimpleMultiblockState(multiblock,locInfo);
-      final Multiblock<SimpleMultiblockState> testMultiblockTwo = new SimpleMultiblock<>(patternTwo,namespacedKey, StateDataTunnels.kryo(), creator);
-      testMultiblockTwo.onClick((event, state)->broadcastMessage("CLICKED"));
+      StateCreator<SimpleMultiblockState> creator = (multiblock, locInfo, event) -> new SimpleMultiblockState(multiblock, locInfo);
+      final Multiblock<SimpleMultiblockState> testMultiblockTwo = new SimpleMultiblock<>(patternTwo, namespacedKey, StateDataTunnels.kryo(), creator);
+      testMultiblockTwo.onClick((event, state) -> broadcastMessage("CLICKED"));
+
+      final Pattern tickablePattern = new PatternCreator(2, 1, 1)
+              .level(0).set(0, 0, Material.BEDROCK).level(1).set(0, 0, Material.OAK_LOG)
+              .triggerCoords(1, 0, 0);
+      final NamespacedKey tickableId = new NamespacedKey(this, "tickabletest");
+      StateCreator<CountingState> tickableCreator = (multiblock, locInfo, event) -> new CountingState(multiblock, locInfo, this, 20);
+      final Multiblock<CountingState> tickableOne = new SimpleMultiblock<>(tickablePattern, tickableId, StateDataTunnels.kryo(), tickableCreator);
+      tickableOne.onClick((event, state) -> {
+        event.getPlayer().sendMessage("Tickable is at "+state.getNum());
+      });
       multiblockRegistry.register(testMultiblock, this);
       multiblockRegistry.register(testMultiblockTwo, this);
+      multiblockRegistry.register(tickableOne, this);
 
       getCommand("chunk").setExecutor(new ChunkUnloader());
       getCommand("clearchunks").setExecutor(new ClearChunks());
       getCommand("myhome").setExecutor(new MyHome());
     });
 
-    onDisable(()->getLogger().info("DISABLING"));
+    onDisable(() -> getLogger().info("DISABLING"));
 
 
   }
+
   private class ChunkUnloader implements CommandExecutor {
     private Chunk chunk;
 
