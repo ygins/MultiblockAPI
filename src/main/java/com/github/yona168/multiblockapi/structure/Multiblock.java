@@ -11,12 +11,17 @@ import org.bukkit.event.player.PlayerInteractEvent;
 
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
 public interface Multiblock<T extends MultiblockState> {
   Optional<T> generateStateFrom(PlayerInteractEvent event);
 
   void onClick(BiConsumer<PlayerInteractEvent, T> eventConsumer);
+
+  void preStateGenCheck(BiPredicate<PlayerInteractEvent,Multiblock<T>> check);
+
+  void postStateGenCheck(BiPredicate<PlayerInteractEvent,T> check);
 
   void doClickActions(PlayerInteractEvent event, T state);
 

@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 
 import static java.util.Optional.empty;
 
@@ -26,14 +27,19 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
   private final StateCreator<T> stateCreator;
   private final NamespacedKey id;
   private final StateDataTunnel dataTunnel;
+  private final Set<BiPredicate<PlayerInteractEvent, Multiblock<T>>> preStateGenChecks;
+  private final Set<BiPredicate<PlayerInteractEvent, T>> postStateGenChecks;
 
-  public SimpleMultiblock(Pattern pattern,NamespacedKey id, StateDataTunnel dataTunnel,StateCreator<T> stateCreator) {
+
+  public SimpleMultiblock(Pattern pattern, NamespacedKey id, StateDataTunnel dataTunnel, StateCreator<T> stateCreator) {
     this.eventConsumers = new HashSet<>();
     this.pattern = pattern;
     this.trigger = ThreeDimensionalArrayCoords.get(pattern, pattern.getTriggerCoords());
     this.stateCreator = stateCreator;
-    this.id=id;
-    this.dataTunnel=dataTunnel;
+    this.id = id;
+    this.dataTunnel = dataTunnel;
+    this.preStateGenChecks = new HashSet<>();
+    this.postStateGenChecks = new HashSet<>();
   }
 
   @Override
@@ -49,7 +55,7 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
       boolean northValid = true;
       boolean westValid = true;
       boolean eastValid = true;
-      Set<Location> allBlockLocations=new HashSet<>();
+      Set<Location> allBlockLocations = new HashSet<>();
       south:
       for (int y = 0; y < pattern.length; y++) {
         for (int r = 0; r < pattern[0].length; r++) {
@@ -67,8 +73,17 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
           }
         }
       }
-      if (southValid)
-        return Optional.of(stateCreator.createFrom(this, new LocationInfo(facingSouthBottomLeft, allBlockLocations,SimpleMultiblockState.Orientation.SOUTH),event));
+      if (southValid) {
+        if(!checkPreState(event)){
+          return Optional.empty();
+        }
+        T state = stateCreator.createFrom(this, new LocationInfo(facingSouthBottomLeft, allBlockLocations, SimpleMultiblockState.Orientation.SOUTH), event);
+        if (checkPostState(event, state)) {
+          return Optional.of(state);
+        } else {
+          return Optional.empty();
+        }
+      }
       final Block facingNorthBottomLeft = clickedLoc.clone().add(-triggerCoords.getColumn(), -triggerCoords.getY(), -triggerCoords.getRow()).getBlock();
       north:
       for (int y = 0; y < pattern.length; y++) {
@@ -87,8 +102,18 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
           }
         }
       }
-      if (northValid)
-        return Optional.of(stateCreator.createFrom(this, new LocationInfo(facingNorthBottomLeft, allBlockLocations,SimpleMultiblockState.Orientation.NORTH),event));
+      if (northValid) {
+        if(!checkPreState(event)){
+          return Optional.empty();
+        }
+        T state = stateCreator.createFrom(this, new LocationInfo(facingNorthBottomLeft, allBlockLocations, SimpleMultiblockState.Orientation.NORTH), event);
+        if(checkPostState(event,state)){
+          return Optional.of(state);
+        }else{
+          return Optional.empty();
+        }
+      }
+
 
       final Block facingEastBottomLeft = clickedLoc.clone().add(triggerCoords.getRow(), -triggerCoords.getY(), -triggerCoords.getColumn()).getBlock();
       east:
@@ -108,8 +133,18 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
           }
         }
       }
-      if (eastValid)
-        return Optional.of(stateCreator.createFrom(this, new LocationInfo(facingEastBottomLeft, allBlockLocations, SimpleMultiblockState.Orientation.EAST),event));
+      if (eastValid){
+        if(!checkPreState(event)){
+          return Optional.empty();
+        }
+        T state=stateCreator.createFrom(this, new LocationInfo(facingEastBottomLeft, allBlockLocations, MultiblockState.Orientation.EAST), event);
+        if(checkPostState(event,state)){
+          return Optional.of(state);
+        }else{
+          return Optional.empty();
+        }
+      }
+
 
       final Block facingWestBottomLeft = clickedLoc.clone().add(-triggerCoords.getRow(), -triggerCoords.getY(), triggerCoords.getColumn()).getBlock();
       west:
@@ -129,8 +164,17 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
           }
         }
       }
-      if (westValid)
-        return Optional.of(stateCreator.createFrom(this, new LocationInfo(facingWestBottomLeft, allBlockLocations, SimpleMultiblockState.Orientation.WEST),event));
+      if (westValid){
+        if(!checkPreState(event)){
+          return Optional.empty();
+        }
+        T state=stateCreator.createFrom(this, new LocationInfo(facingWestBottomLeft, allBlockLocations, SimpleMultiblockState.Orientation.WEST), event);
+        if(checkPostState(event, state)){
+          return Optional.of(state);
+        }else{
+          return Optional.empty();
+        }
+      }
     }
     return empty();
   }
@@ -138,6 +182,24 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
   @Override
   public void onClick(BiConsumer<PlayerInteractEvent, T> eventConsumer) {
     this.eventConsumers.add(eventConsumer);
+  }
+
+  @Override
+  public void preStateGenCheck(BiPredicate<PlayerInteractEvent, Multiblock<T>> check) {
+    this.preStateGenChecks.add(check);
+  }
+
+  @Override
+  public void postStateGenCheck(BiPredicate<PlayerInteractEvent, T> check) {
+    this.postStateGenChecks.add(check);
+  }
+
+  private boolean checkPreState(PlayerInteractEvent event) {
+    return this.preStateGenChecks.stream().allMatch(predicate -> predicate.test(event, this));
+  }
+
+  private boolean checkPostState(PlayerInteractEvent event, T state) {
+    return this.postStateGenChecks.stream().allMatch(predicate -> predicate.test(event, state));
   }
 
   @Override

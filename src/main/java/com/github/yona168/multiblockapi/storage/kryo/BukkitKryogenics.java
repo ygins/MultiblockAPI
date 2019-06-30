@@ -4,6 +4,8 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.serializers.DefaultArraySerializers;
+import com.esotericsoftware.kryo.serializers.MapSerializer;
 import com.github.yona168.multiblockapi.util.ChunkCoords;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -94,12 +96,25 @@ public class BukkitKryogenics {
     kryo.register(Location.class, new Serializer<Location>() {
       @Override
       public void write(Kryo kryo, Output output, Location location) {
-        kryo.writeClassAndObject(output, location.serialize());
+        kryo.writeObject(output, location.getWorld());
+        output.writeDouble(location.getX());
+        output.writeDouble(location.getY());
+        output.writeDouble(location.getZ());
+        output.writeFloat(location.getYaw());
+        output.writeFloat(location.getPitch());
+
       }
 
       @Override
       public Location read(Kryo kryo, Input input, Class type) {
-        return Location.deserialize((Map<String, Object>) kryo.readClassAndObject(input));
+        return new Location(
+                kryo.readObject(input, World.class),
+                input.readDouble(),
+                input.readDouble(),
+                input.readDouble(),
+                input.readFloat(),
+                input.readFloat()
+        );
       }
     });
 
@@ -146,7 +161,7 @@ public class BukkitKryogenics {
     kryo.addDefaultSerializer(Chunk.class, chunkSerializer);
     kryo.register(Chunk.class);
 
-    kryo.register(NamespacedKey.class, new Serializer<NamespacedKey>(){
+    kryo.register(NamespacedKey.class, new Serializer<NamespacedKey>() {
 
       @Override
       public void write(Kryo kryo, Output output, NamespacedKey object) {

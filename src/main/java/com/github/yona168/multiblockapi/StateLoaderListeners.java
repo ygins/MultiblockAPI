@@ -184,7 +184,6 @@ public class StateLoaderListeners extends Component {
           multiblockStates.forEach(state -> {
             sync(()->stateCache.store(state));
             sync(state::enable);
-            dataTunnel.removeFromAfarAsync(state);
           });
           if (debug != null && multiblockStates.size() != 0) {
             debug.accept(getConsoleSender(), size + " states were pulled from afar into chunk " + ChatColor.RED + chunk.getX() + ", " + chunk.getZ() + " in " + ChatColor.LIGHT_PURPLE + (currentTimeMillis() - removeTime) + ChatColor.RESET + " ms.");
@@ -199,7 +198,6 @@ public class StateLoaderListeners extends Component {
       multiblockStates.forEach(state -> {
         stateCache.store(state);
         state.enable();
-        state.getMultiblock().getDataTunnel().removeFromAfar(state);
       });
       if (debug != null && multiblockStates.size() != 0) {
         debug.accept(getConsoleSender(), size + " states were pulled from afar into chunk " + ChatColor.RED + chunk.getX() + ", " + chunk.getZ() + " in " + ChatColor.LIGHT_PURPLE + (currentTimeMillis() - removeTime) + ChatColor.RESET + " ms.");

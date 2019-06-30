@@ -13,10 +13,7 @@ import com.github.yona168.multiblockapi.structure.SimpleMultiblock;
 import com.github.yona168.multiblockapi.structure.StateCreator;
 import com.github.yona168.multiblockapi.util.ThreeDimensionalArrayCoords;
 import com.gitlab.avelyn.core.components.ComponentPlugin;
-import org.bukkit.Chunk;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
+import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -53,6 +50,13 @@ public class MultiblockAPI extends ComponentPlugin {
         state.toggle();
         broadcastMessage("State toggled to " + state.getInt());
       });
+      testMultiblock.preStateGenCheck((event, multiblock)->
+        event.getPlayer().getGameMode()== GameMode.CREATIVE
+      );
+
+      testMultiblock.postStateGenCheck((event, state)->
+        state.getClass()==IntState.class && event.getPlayer().getInventory().getItemInMainHand().getType()==Material.DIAMOND_HOE
+      );
 
       final Pattern patternTwo = new PatternCreator(5, 5, 5).level(0).fillLevel(Material.OAK_PLANKS).level(1)
               .fillLevel(Material.OAK_PLANKS).level(2).fillLevel(Material.OAK_PLANKS).level(3).fillLevel(Material.OAK_PLANKS).level(4)
