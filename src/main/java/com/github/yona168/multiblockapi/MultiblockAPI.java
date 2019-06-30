@@ -10,6 +10,7 @@ import com.github.yona168.multiblockapi.state.IntState;
 import com.github.yona168.multiblockapi.state.SimpleMultiblockState;
 import com.github.yona168.multiblockapi.structure.Multiblock;
 import com.github.yona168.multiblockapi.structure.SimpleMultiblock;
+import com.github.yona168.multiblockapi.structure.StateCreator;
 import com.github.yona168.multiblockapi.util.ThreeDimensionalArrayCoords;
 import com.gitlab.avelyn.core.components.ComponentPlugin;
 import org.bukkit.Chunk;
@@ -46,7 +47,8 @@ public class MultiblockAPI extends ComponentPlugin {
               .set(0, 0, Material.OAK_PLANKS).set(1, 0, Material.BIRCH_PLANKS).set(1, 1, Material.OAK_PLANKS)
               .level(1).set(1, 1, Material.OBSIDIAN).triggerCoords(1,1,1);
       final NamespacedKey multiblockId = new NamespacedKey(this, "testOne");
-      final Multiblock<IntState> testMultiblock = new SimpleMultiblock<>(pattern, multiblockId, StateDataTunnels.kryo(), IntState::new);
+      StateCreator<IntState> intStateStateCreator=(multiblock,locInfo,event)->new IntState(multiblock,locInfo);
+      final Multiblock<IntState> testMultiblock = new SimpleMultiblock<>(pattern, multiblockId, StateDataTunnels.kryo(), intStateStateCreator);
       testMultiblock.onClick((event, state) -> {
         state.toggle();
         broadcastMessage("State toggled to " + state.getInt());
@@ -56,7 +58,8 @@ public class MultiblockAPI extends ComponentPlugin {
               .fillLevel(Material.OAK_PLANKS).level(2).fillLevel(Material.OAK_PLANKS).level(3).fillLevel(Material.OAK_PLANKS).level(4)
               .set(4, 2, Material.BIRCH_PLANKS).triggerCoords(4,4,2);
       final NamespacedKey namespacedKey = new NamespacedKey(this, "testTwo");
-      final Multiblock<SimpleMultiblockState> testMultiblockTwo = new SimpleMultiblock<>(patternTwo,namespacedKey, StateDataTunnels.kryo(), SimpleMultiblockState::new);
+      StateCreator<SimpleMultiblockState> creator=(multiblock,locInfo,event)->new SimpleMultiblockState(multiblock,locInfo);
+      final Multiblock<SimpleMultiblockState> testMultiblockTwo = new SimpleMultiblock<>(patternTwo,namespacedKey, StateDataTunnels.kryo(), creator);
       testMultiblockTwo.onClick((event, state)->broadcastMessage("CLICKED"));
       multiblockRegistry.register(testMultiblock, this);
       multiblockRegistry.register(testMultiblockTwo, this);

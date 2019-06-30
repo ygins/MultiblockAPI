@@ -23,11 +23,11 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
   private final Material trigger;
   private final Pattern pattern;
   private final Set<BiConsumer<PlayerInteractEvent, T>> eventConsumers;
-  private final BiFunction<SimpleMultiblock<T>, LocationInfo, T> stateCreator;
+  private final StateCreator<T> stateCreator;
   private final NamespacedKey id;
   private final StateDataTunnel dataTunnel;
 
-  public SimpleMultiblock(Pattern pattern,NamespacedKey id, StateDataTunnel dataTunnel,BiFunction<SimpleMultiblock<T>, LocationInfo, T> stateCreator) {
+  public SimpleMultiblock(Pattern pattern,NamespacedKey id, StateDataTunnel dataTunnel,StateCreator<T> stateCreator) {
     this.eventConsumers = new HashSet<>();
     this.pattern = pattern;
     this.trigger = ThreeDimensionalArrayCoords.get(pattern, pattern.getTriggerCoords());
@@ -68,7 +68,7 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
         }
       }
       if (southValid)
-        return Optional.of(stateCreator.apply(this, new LocationInfo(facingSouthBottomLeft, allBlockLocations,SimpleMultiblockState.Orientation.SOUTH)));
+        return Optional.of(stateCreator.createFrom(this, new LocationInfo(facingSouthBottomLeft, allBlockLocations,SimpleMultiblockState.Orientation.SOUTH),event));
       final Block facingNorthBottomLeft = clickedLoc.clone().add(-triggerCoords.getColumn(), -triggerCoords.getY(), -triggerCoords.getRow()).getBlock();
       north:
       for (int y = 0; y < pattern.length; y++) {
@@ -88,7 +88,7 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
         }
       }
       if (northValid)
-        return Optional.of(stateCreator.apply(this, new LocationInfo(facingNorthBottomLeft, allBlockLocations,SimpleMultiblockState.Orientation.NORTH)));
+        return Optional.of(stateCreator.createFrom(this, new LocationInfo(facingNorthBottomLeft, allBlockLocations,SimpleMultiblockState.Orientation.NORTH),event));
 
       final Block facingEastBottomLeft = clickedLoc.clone().add(triggerCoords.getRow(), -triggerCoords.getY(), -triggerCoords.getColumn()).getBlock();
       east:
@@ -109,7 +109,7 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
         }
       }
       if (eastValid)
-        return Optional.of(stateCreator.apply(this, new LocationInfo(facingEastBottomLeft, allBlockLocations, SimpleMultiblockState.Orientation.EAST)));
+        return Optional.of(stateCreator.createFrom(this, new LocationInfo(facingEastBottomLeft, allBlockLocations, SimpleMultiblockState.Orientation.EAST),event));
 
       final Block facingWestBottomLeft = clickedLoc.clone().add(-triggerCoords.getRow(), -triggerCoords.getY(), triggerCoords.getColumn()).getBlock();
       west:
@@ -130,7 +130,7 @@ public class SimpleMultiblock<T extends MultiblockState> implements Multiblock<T
         }
       }
       if (westValid)
-        return Optional.of(stateCreator.apply(this, new LocationInfo(facingWestBottomLeft, allBlockLocations, SimpleMultiblockState.Orientation.WEST)));
+        return Optional.of(stateCreator.createFrom(this, new LocationInfo(facingWestBottomLeft, allBlockLocations, SimpleMultiblockState.Orientation.WEST),event));
     }
     return empty();
   }
