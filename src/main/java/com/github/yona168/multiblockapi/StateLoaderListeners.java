@@ -81,6 +81,10 @@ public class StateLoaderListeners extends Component {
     long before = currentTimeMillis();
     if (existingState == null) {
       multiblockRegistry.getAllMultiblocks().stream().map(multiblock -> multiblock.generateStateFrom(event)).filter(Optional::isPresent).map(Optional::get).findFirst().ifPresent(multiblockState -> {
+        boolean wouldOverwriteExistingState=multiblockState.getAllBlocksLocs().stream().anyMatch(loc->stateCache.getAt(loc)!=null);
+        if(wouldOverwriteExistingState){
+          return;
+        }
         stateCache.store(multiblockState);
         (multiblockState).enable();
         multiblockState.getMultiblock().doClickActions(event, multiblockState);
