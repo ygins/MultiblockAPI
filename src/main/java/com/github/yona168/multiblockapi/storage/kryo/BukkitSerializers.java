@@ -83,7 +83,11 @@ public class BukkitSerializers {
         methodItemCreate = null;
       } catch (Throwable ignored) {
         itemConstructor = null;
-        methodItemCreate = CLASS_ITEM.getDeclaredMethod("a", nbt);
+        try {
+          methodItemCreate = CLASS_ITEM.getDeclaredMethod("a", nbt);
+        }catch(NoSuchMethodException ex){
+          methodItemCreate=CLASS_ITEM.getDeclaredMethod("createStack", nbt);
+        }
         methodItemCreate.setAccessible(true);
       }
       CONSTRUCTOR_ITEM = itemConstructor;

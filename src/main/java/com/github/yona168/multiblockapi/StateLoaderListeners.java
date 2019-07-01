@@ -59,8 +59,8 @@ public class StateLoaderListeners extends Component {
             getScheduler().runTask(plugin, ()->Bukkit.getWorlds().stream().map(World::getLoadedChunks)
                     .flatMap(Arrays::stream).forEach(chunk -> proccessLoadingChunk(chunk, false)))
     );
-    onDisable(() -> Bukkit.getWorlds().forEach(world -> processUnloadingWorld(world, false)));
     onDisable(() -> {
+      Bukkit.getWorlds().forEach(world -> processUnloadingWorld(world, false));
       storageMethodRegistry.waitForAllAsyncsDone();
       stateCache.clear();
     });
@@ -141,9 +141,6 @@ public class StateLoaderListeners extends Component {
 
   private void handleChunkUnload(ChunkUnloadEvent event) {
     final Chunk chunk = event.getChunk();
-    if (isTestChunk(chunk)) {
-      broadcastMessage("test chunk unloaading.");
-    }
     long removeTimeU = 0;
     if (debug != null) {
       removeTimeU = currentTimeMillis();
@@ -174,10 +171,6 @@ public class StateLoaderListeners extends Component {
   }
 
   private void proccessLoadingChunk(Chunk chunk, boolean async) {
-    if (isTestChunk(chunk)) {
-      //printStackTrace();
-      broadcastMessage("Test chunk loading");
-    }
     Collection<MultiblockState> alreadyLoadedStates = stateCache.getAt(chunk);
     if (alreadyLoadedStates == null || (alreadyLoadedStates.size() != 0) || dataTunnelRegistry.isProcessing(chunk)) {
       return;
@@ -239,10 +232,6 @@ public class StateLoaderListeners extends Component {
 
   private static String removeTimeMsg(long removeTime) {
     return "Multiblock removed in " + ChatColor.LIGHT_PURPLE + (currentTimeMillis() - removeTime) + ChatColor.RESET + " ms";
-  }
-
-  private boolean isTestChunk(Chunk chunk) {
-    return chunk.getX() == MultiblockAPI.garbageChunkX && chunk.getZ() == MultiblockAPI.garbageChunkZ;
   }
 
   private void sync(Runnable runnable) {
