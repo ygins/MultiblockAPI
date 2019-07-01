@@ -34,14 +34,14 @@ public class SimpleMultiblockState implements MultiblockState {
   //Whether or not the state is destroyed (Multiblock is destroyed)
   private boolean destroyed;
 
-  public SimpleMultiblockState(Multiblock multiblock, Orientation orientation, Block bottomLeftBlock, Set<Location> allBlocks, Pattern pattern) {
+  public SimpleMultiblockState(Multiblock multiblock, Orientation orientation, Block bottomLeftBlock, Set<Location> allBlocks) {
     this.uuid = randomUUID();
     this.enabled = false;
     this.destroyed = false;
     this.multiblock = multiblock;
     this.orientation = orientation;
     this.bottomLeftBlock = bottomLeftBlock;
-    ThreeDimensionalArrayCoords triggerCoords=pattern.getTriggerCoords();
+    ThreeDimensionalArrayCoords triggerCoords=multiblock.getPattern().getTriggerCoords();
     this.triggerLoc = orientation.getBlock(triggerCoords.getY(), triggerCoords.getRow(), triggerCoords.getColumn(), bottomLeftBlock).getLocation();
     this.allBlocks=allBlocks;
     Set<Location> allBlocksCopy=new HashSet<>(allBlocks);
@@ -52,7 +52,7 @@ public class SimpleMultiblockState implements MultiblockState {
   }
 
   public SimpleMultiblockState(Multiblock multiblock, LocationInfo locInfo) {
-    this(multiblock, locInfo.getOrientation(), locInfo.getBottomLeftCorner(), locInfo.getAllBlockLocations(),multiblock.getPattern());
+    this(multiblock, locInfo.getOrientation(), locInfo.getBottomLeftCorner(), locInfo.getAllBlockLocations());
   }
 
   @Override
