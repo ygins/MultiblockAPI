@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static java.util.Collections.newSetFromMap;
@@ -31,7 +32,7 @@ public abstract class AbstractDataTunnel extends Component implements StateDataT
     lockMap = new ConcurrentHashMap<>();
     processingChunks = new ConcurrentHashMap<>();
     runningAsyncTasks = newSetFromMap(new ConcurrentHashMap<>());
-    onDisable(()->{
+    onDisable(() -> {
       lockMap.clear();
       processingChunks.clear();
       runningAsyncTasks.clear();
@@ -88,7 +89,7 @@ public abstract class AbstractDataTunnel extends Component implements StateDataT
   @Override
   public CompletableFuture<Void> removeFromAfarAsync(MultiblockState state) {
     CompletableFuture<Void> returning = new CompletableFuture<>();
-    asyncProccess(() -> {
+    asyncProccess(()-> {
       withWriteLockFor(state.getTriggerChunk(), () -> {
         initRemoveFromAfar(state);
         returning.complete(null);
@@ -133,15 +134,14 @@ public abstract class AbstractDataTunnel extends Component implements StateDataT
     lock.unlock();
   }
 
-  private void asyncProccess(Runnable runnable) {
+  private void asyncProccess(Runnable action) {
     new BukkitRunnable() {
       @Override
       public void run() {
         runningAsyncTasks.add(this.getTaskId());
-        runnable.run();
+        action.run();
         runningAsyncTasks.remove(this.getTaskId());
       }
     }.runTaskAsynchronously(plugin);
   }
-
 }

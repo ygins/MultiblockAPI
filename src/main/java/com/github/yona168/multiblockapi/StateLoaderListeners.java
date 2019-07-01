@@ -26,6 +26,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
+import static com.github.yona168.multiblockapi.MoveMultiblockCancellers.cancelAttemptsToMoveMultiblocks;
 import static com.github.yona168.multiblockapi.util.ToggleableTasks.syncLater;
 import static com.gitlab.avelyn.core.base.Events.listen;
 import static java.lang.System.currentTimeMillis;
@@ -46,6 +47,7 @@ public class StateLoaderListeners extends Component {
     this.multiblockRegistry = multiblockRegistry;
     addChild(multiblockRegistry);
     addChild(StateDataTunnels.enabler(plugin, multiblockRegistry));
+    addChild(cancelAttemptsToMoveMultiblocks(stateCache));
     addChild(listen(PlayerInteractEvent.class, this::handleInteract));
     addChild(listen(BlockBreakEvent.class, EventPriority.MONITOR, this::handleBlockBreak));
     addChild(listen(EntityExplodeEvent.class, EventPriority.MONITOR, this::handleEntityExplode));
@@ -88,7 +90,6 @@ public class StateLoaderListeners extends Component {
         stateCache.store(multiblockState);
         (multiblockState).enable();
         multiblockState.getMultiblock().doClickActions(event, multiblockState);
-        multiblockState.getMultiblock().getDataTunnel().storeAwayAsync(multiblockState);
         if (debug != null) {
           long difference = currentTimeMillis() - before;
           debug.accept(event.getPlayer(), "Multiblock has been registered, and the whole process took " + ChatColor.LIGHT_PURPLE + difference + ChatColor.RESET + " millis");
