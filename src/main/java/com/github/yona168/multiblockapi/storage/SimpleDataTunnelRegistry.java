@@ -1,8 +1,7 @@
 package com.github.yona168.multiblockapi.storage;
 
-import com.github.yona168.multiblockapi.structure.Multiblock;
+import com.github.yona168.multiblockapi.util.NamespacedKey;
 import com.gitlab.avelyn.architecture.base.Component;
-import org.bukkit.NamespacedKey;
 
 import java.util.Collection;
 import java.util.HashMap;

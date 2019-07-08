@@ -1,11 +1,9 @@
 package com.github.yona168.multiblockapi.storage;
 
-import com.github.yona168.multiblockapi.structure.Multiblock;
+import com.github.yona168.multiblockapi.util.NamespacedKey;
 import org.bukkit.Chunk;
-import org.bukkit.NamespacedKey;
 
 import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
 
 public interface DataTunnelRegistry {
   void register(NamespacedKey namespacedKey, StateDataTunnel storageMethod);

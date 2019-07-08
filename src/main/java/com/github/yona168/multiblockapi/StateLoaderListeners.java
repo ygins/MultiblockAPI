@@ -6,10 +6,13 @@ import com.github.yona168.multiblockapi.state.MultiblockState;
 import com.github.yona168.multiblockapi.storage.DataTunnelRegistry;
 import com.github.yona168.multiblockapi.storage.StateDataTunnel;
 import com.github.yona168.multiblockapi.storage.StateDataTunnels;
+import com.github.yona168.multiblockapi.util.NamespacedKey;
 import com.gitlab.avelyn.architecture.base.Component;
 import com.gitlab.avelyn.architecture.base.Toggleable;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.*;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.Action;
@@ -54,9 +57,9 @@ public class StateLoaderListeners extends Component {
     addChild(listen(ChunkUnloadEvent.class, this::handleChunkUnload));
     addChild(listen(WorldUnloadEvent.class, this::handleWorldUnload));
     addChild(listen(ChunkLoadEvent.class, this::handleChunkLoad));
-    onEnable(()->dataTunnelRegistry.register(new NamespacedKey(plugin,"KRYO"), StateDataTunnels.kryo()));
+    onEnable(() -> dataTunnelRegistry.register(new NamespacedKey(plugin, "KRYO"), StateDataTunnels.kryo()));
     onEnable(() ->
-            getScheduler().runTask(plugin, ()->Bukkit.getWorlds().stream().map(World::getLoadedChunks)
+            getScheduler().runTask(plugin, () -> Bukkit.getWorlds().stream().map(World::getLoadedChunks)
                     .flatMap(Arrays::stream).forEach(chunk -> proccessLoadingChunk(chunk, false)))
     );
     onDisable(() -> {
@@ -83,8 +86,8 @@ public class StateLoaderListeners extends Component {
     long before = currentTimeMillis();
     if (existingState == null) {
       multiblockRegistry.getAllMultiblocks().stream().map(multiblock -> multiblock.generateStateFrom(event)).filter(Optional::isPresent).map(Optional::get).findFirst().ifPresent(multiblockState -> {
-        boolean wouldOverwriteExistingState=multiblockState.getAllBlocksLocs().stream().anyMatch(loc->stateCache.getAt(loc)!=null);
-        if(wouldOverwriteExistingState){
+        boolean wouldOverwriteExistingState = multiblockState.getAllBlocksLocs().stream().anyMatch(loc -> stateCache.getAt(loc) != null);
+        if (wouldOverwriteExistingState) {
           return;
         }
         stateCache.store(multiblockState);
@@ -97,8 +100,10 @@ public class StateLoaderListeners extends Component {
       });
     } else {
       existingState.getMultiblock().doClickActions(event, existingState);
-      long difference = currentTimeMillis() - before;
-      debug.accept(event.getPlayer(), "Multiblock was detected as registered, and the whole process took " + ChatColor.LIGHT_PURPLE + difference + ChatColor.RESET + " millis");
+      if (debug != null) {
+        long difference = currentTimeMillis() - before;
+        debug.accept(event.getPlayer(), "Multiblock was detected as registered, and the whole process took " + ChatColor.LIGHT_PURPLE + difference + ChatColor.RESET + " millis");
+      }
     }
   }
 
@@ -181,7 +186,7 @@ public class StateLoaderListeners extends Component {
         dataTunnel.getFromAfarAsync(chunk).thenAccept(multiblockStates -> {
           int size = multiblockStates.size();
           multiblockStates.forEach(state -> {
-            sync(()->stateCache.store(state));
+            sync(() -> stateCache.store(state));
             sync(state::enable);
           });
           if (debug != null && multiblockStates.size() != 0) {
@@ -221,7 +226,7 @@ public class StateLoaderListeners extends Component {
     unloadedStates.forEach(state -> {
       stateCache.remove(state);
       state.disable();
-      final StateDataTunnel dataTunnel=state.getMultiblock().getDataTunnel();
+      final StateDataTunnel dataTunnel = state.getMultiblock().getDataTunnel();
       if (async) dataTunnel.storeAwayAsync(state);
       else dataTunnel.storeAway(state);
     });

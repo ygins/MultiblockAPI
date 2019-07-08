@@ -34,7 +34,7 @@ public class KryoDataTunnel extends AbstractDataTunnel {
     final Chunk targetChunk = state.getTriggerChunk();
     final Path targetChunkFolder = getFilePathFor(targetChunk);
     createDirIfNotExists(targetChunkFolder);
-    final Path targetFile = targetChunkFolder.resolve(state.getUniqueid().toString());
+    final Path targetFile = targetChunkFolder.resolve(state.getUniqueid().toString()+"-"+state.getMultiblock().getId().getNamespacedKey());
     try {
       Kryogenic.freeze(getNextKryo(),targetFile, state);
     } catch (IOException e) {

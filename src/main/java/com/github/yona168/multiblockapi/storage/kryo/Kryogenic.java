@@ -13,6 +13,7 @@ import com.github.yona168.multiblockapi.registry.MultiblockRegistry;
 import com.github.yona168.multiblockapi.state.MultiblockState;
 import com.github.yona168.multiblockapi.structure.Multiblock;
 import com.github.yona168.multiblockapi.util.ChunkCoords;
+import com.github.yona168.multiblockapi.util.NamespacedKey;
 import com.github.yona168.multiblockapi.util.SimpleChunkCoords;
 import com.gitlab.avelyn.architecture.base.Component;
 import com.gitlab.avelyn.architecture.base.Toggleable;
@@ -22,7 +23,6 @@ import de.javakaffee.kryoserializers.SynchronizedCollectionsSerializer;
 import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer;
 import de.javakaffee.kryoserializers.cglib.CGLibProxySerializer;
 import de.javakaffee.kryoserializers.guava.*;
-import org.bukkit.NamespacedKey;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
 import java.io.IOException;
@@ -31,6 +31,7 @@ import java.io.OutputStream;
 import java.lang.reflect.InvocationHandler;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static java.nio.file.Files.*;
@@ -40,12 +41,13 @@ import static org.bukkit.Bukkit.getWorld;
 public class Kryogenic {
 
 
-  private static Pool<Kryo> kryoPool;
+  private static Pool<Kryo> kryoPool=null;
 
   public static Pool<Kryo> getKryoPool() {
     return kryoPool;
   }
   public static Kryo getNextKryo(){return getKryoPool().obtain();}
+  private static final Set<Consumer<Kryo>> actions=new HashSet<>();
 
   public static Toggleable enabler(MultiblockRegistry multiblockRegistry) {
     Component component = new Component();
@@ -54,11 +56,20 @@ public class Kryogenic {
       protected Kryo create() {
         final Kryo kryo=new Kryo();
         init(multiblockRegistry,kryo);
+        actions.forEach(action->action.accept(kryo));
         return kryo;
       }
     });
     component.onDisable(()->kryoPool=null);
+    component.onDisable(actions::clear);
     return component;
+  }
+
+  public static void kryoAction(Consumer<Kryo> action){
+    if(kryoPool!=null){
+      throw new IllegalStateException("kryoAction can only be called on plugin load!");
+    }
+    actions.add(action);
   }
 
   private static void init(MultiblockRegistry multiblockRegistry, Kryo KRYO) {
@@ -136,6 +147,20 @@ public class Kryogenic {
       @Override
       public MultiblockState.Orientation read(Kryo kryo, Input input, Class<? extends MultiblockState.Orientation> type) {
         return MultiblockState.Orientation.valueOf(input.readString());
+      }
+    });
+
+    KRYO.register(NamespacedKey.class, new Serializer<NamespacedKey>(){
+
+      @Override
+      public void write(Kryo kryo, Output output, NamespacedKey object) {
+        output.writeString(object.getNamespace());
+        output.writeString(object.getKey());
+      }
+
+      @Override
+      public NamespacedKey read(Kryo kryo, Input input, Class<? extends NamespacedKey> type) {
+        return new NamespacedKey(input.readString(), input.readString());
       }
     });
   }

@@ -162,21 +162,6 @@ public class BukkitKryogenics {
     kryo.addDefaultSerializer(Chunk.class, chunkSerializer);
     kryo.register(Chunk.class);
 
-    kryo.register(NamespacedKey.class, new Serializer<NamespacedKey>() {
-
-      @Override
-      public void write(Kryo kryo, Output output, NamespacedKey object) {
-        output.writeString(object.getNamespace());
-        output.writeString(object.getKey());
-      }
-
-      @Override
-      @SuppressWarnings("deprecated")
-      public NamespacedKey read(Kryo kryo, Input input, Class<? extends NamespacedKey> type) {
-        return new NamespacedKey(input.readString(), input.readString());
-      }
-    });
-
     kryo.addDefaultSerializer(Plugin.class,new Serializer<Plugin>(){
 
       @Override

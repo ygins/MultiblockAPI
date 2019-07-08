@@ -68,7 +68,6 @@ public interface MultiblockState extends Toggleable {
         return bottomLeftCorner.getRelative(row, level, -column);
       }
     };
-    private static Map<Integer, Orientation> intMap = new HashMap<>();
 
     abstract Block getBlock(int level, int row, int column, Block bottomLeftCorner);
   }

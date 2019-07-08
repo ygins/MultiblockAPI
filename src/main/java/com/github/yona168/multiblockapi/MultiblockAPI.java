@@ -8,19 +8,32 @@ import com.github.yona168.multiblockapi.storage.SimpleStateCache;
 import com.github.yona168.multiblockapi.storage.StateCache;
 import com.gitlab.avelyn.core.components.ComponentPlugin;
 
-import static org.bukkit.Bukkit.broadcastMessage;
 
-//Legit everything in here is garbage test as of now
-public class MultiblockAPI extends ComponentPlugin {
+public class MultiblockAPI extends ComponentPlugin implements API {
   private final MultiblockRegistry multiblockRegistry;
   private final DataTunnelRegistry dataTunnelRegistry;
-  private final StateCache stateCache;
+  private static API api;
 
   public MultiblockAPI() {
     multiblockRegistry = new SimpleMultiblockRegistry();
-    stateCache = new SimpleStateCache();
+    final StateCache stateCache = new SimpleStateCache();
     dataTunnelRegistry = new SimpleDataTunnelRegistry();
+    onEnable(()->api=this);
+    onDisable(()->api=null);
     addChild(new StateLoaderListeners(stateCache, multiblockRegistry, dataTunnelRegistry, this, null));
   }
 
+  @Override
+  public DataTunnelRegistry getDataTunnelRegistry() {
+    return dataTunnelRegistry;
+  }
+
+  @Override
+  public MultiblockRegistry getMultiblockRegistry() {
+    return multiblockRegistry;
+  }
+
+  public static API getAPI() {
+    return api;
+  }
 }
