@@ -9,6 +9,7 @@ import com.github.yona168.multiblockapi.storage.StateDataTunnels;
 import com.github.yona168.multiblockapi.util.NamespacedKey;
 import com.gitlab.avelyn.architecture.base.Component;
 import com.gitlab.avelyn.architecture.base.Toggleable;
+import com.gitlab.avelyn.core.base.Events;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -30,8 +31,8 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import static com.github.yona168.multiblockapi.MoveMultiblockCancellers.cancelAttemptsToMoveMultiblocks;
+import static com.github.yona168.multiblockapi.util.AvelynUtils.listen;
 import static com.github.yona168.multiblockapi.util.ToggleableTasks.syncLater;
-import static com.gitlab.avelyn.core.base.Events.listen;
 import static java.lang.System.currentTimeMillis;
 import static org.bukkit.Bukkit.*;
 
@@ -52,8 +53,8 @@ public class StateLoaderListeners extends Component {
     addChild(StateDataTunnels.enabler(plugin, multiblockRegistry));
     addChild(cancelAttemptsToMoveMultiblocks(stateCache));
     addChild(listen(PlayerInteractEvent.class, this::handleInteract));
-    addChild(listen(BlockBreakEvent.class, EventPriority.MONITOR, this::handleBlockBreak));
-    addChild(listen(EntityExplodeEvent.class, EventPriority.MONITOR, this::handleEntityExplode));
+    addChild(Events.listen(BlockBreakEvent.class, EventPriority.MONITOR, this::handleBlockBreak));
+    addChild(Events.listen(EntityExplodeEvent.class, EventPriority.MONITOR, this::handleEntityExplode));
     addChild(listen(ChunkUnloadEvent.class, this::handleChunkUnload));
     addChild(listen(WorldUnloadEvent.class, this::handleWorldUnload));
     addChild(listen(ChunkLoadEvent.class, this::handleChunkLoad));

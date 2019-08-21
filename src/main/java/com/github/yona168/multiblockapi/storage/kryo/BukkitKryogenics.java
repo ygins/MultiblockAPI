@@ -30,10 +30,12 @@ public class BukkitKryogenics {
   private static final String ERR_LOAD_ENTITY = "Failed to deserialize NBT for an Entity.";
 
   public static void registerSerializers(Kryo kryo) {
+    /*
     stream(values()).map(EntityType::getEntityClass).forEach(type -> {
       if (type == null) {
         return;
       }
+
       kryo.register(type, new Serializer<Entity>() {
         @Override
         public void write(Kryo kryo, Output out, Entity entity) {
@@ -54,7 +56,7 @@ public class BukkitKryogenics {
         }
       });
     });
-
+  */
     new Serializer<ItemStack>() {
       {
         kryo.register(ItemStack.class, this);

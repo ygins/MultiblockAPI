@@ -34,8 +34,8 @@ public class SimpleMultiblockState implements MultiblockState {
   //Whether or not the state is destroyed (Multiblock is destroyed)
   private boolean destroyed;
 
-  public SimpleMultiblockState(Multiblock multiblock, Orientation orientation, Block bottomLeftBlock, Set<Location> allBlocks) {
-    this.uuid = randomUUID();
+  private SimpleMultiblockState(UUID uuid, Multiblock multiblock, Orientation orientation, Block bottomLeftBlock, Set<Location> allBlocks) {
+    this.uuid = uuid;
     this.enabled = false;
     this.destroyed = false;
     this.multiblock = multiblock;
@@ -52,7 +52,11 @@ public class SimpleMultiblockState implements MultiblockState {
   }
 
   public SimpleMultiblockState(Multiblock multiblock, LocationInfo locInfo) {
-    this(multiblock, locInfo.getOrientation(), locInfo.getBottomLeftCorner(), locInfo.getAllBlockLocations());
+    this(randomUUID(), multiblock, locInfo.getOrientation(), locInfo.getBottomLeftCorner(), locInfo.getAllBlockLocations());
+  }
+
+  protected SimpleMultiblockState(UUID uuid, Multiblock multiblock, LocationInfo locInfo) {
+    this(uuid, multiblock, locInfo.getOrientation(), locInfo.getBottomLeftCorner(), locInfo.getAllBlockLocations());
   }
 
   @Override

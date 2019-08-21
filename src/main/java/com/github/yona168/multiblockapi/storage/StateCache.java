@@ -1,5 +1,6 @@
 package com.github.yona168.multiblockapi.storage;
 
+import com.github.yona168.multiblockapi.state.Backup;
 import com.github.yona168.multiblockapi.state.MultiblockState;
 import com.github.yona168.multiblockapi.structure.Multiblock;
 import org.bukkit.Chunk;
@@ -24,4 +25,11 @@ public interface StateCache {
   void remove(MultiblockState state);
 
   void clear();
+
+  default CompletableFuture<Void> backup(){
+    return CompletableFuture.allOf(
+    getAll().stream().filter(it->it instanceof Backup)
+            .map(backupable->backupable.getMultiblock().getDataTunnel().storeAwayAsync(((Backup) backupable).snapshot()))
+            .toArray(CompletableFuture[]::new));
+  }
 }

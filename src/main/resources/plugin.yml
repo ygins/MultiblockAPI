@@ -1,3 +1,8 @@
 main: com.github.yona168.multiblockapi.MultiblockAPI
 name: MultiblockAPI
-version: "0.1"
+version: "1.0.0"
+
+commands:
+  mbapi:
+    description: "Multiblock API core command"
+    usage: "/mbapi"
