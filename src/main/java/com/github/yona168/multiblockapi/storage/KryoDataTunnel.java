@@ -66,7 +66,7 @@ public class KryoDataTunnel extends AbstractDataTunnel {
 
   @Override
   public void initRemoveFromAfar(MultiblockState state) {
-    final Path targetFile = getFilePathFor(state.getTriggerChunk()).resolve(state.getUniqueid().toString());
+    final Path targetFile = getFilePathFor(state.getTriggerChunk()).resolve(state.getUniqueid().toString()+"-"+state.getMultiblock().getId().getNamespacedKey());
     try {
       Files.deleteIfExists(targetFile);
     } catch (IOException e) {
