@@ -20,7 +20,7 @@ repositories {
 dependencies {
     compile 'com.esotericsoftware:kryo:5.0.0-RC4'
     compile "de.javakaffee:kryo-serializers:0.45"
-    compileOnly 'org.spigotmc:spigot-api:1.13.2-R0.1-SNAPSHOT'
+    compileOnly 'org.spigotmc:spigot-api:1.8.8-R0.1-SNAPSHOT'
     compile 'com.gitlab.Avelyn:Core:0.0.16'
 }
 

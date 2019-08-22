@@ -9,6 +9,7 @@ import com.esotericsoftware.kryo.unsafe.UnsafeInput;
 import com.esotericsoftware.kryo.unsafe.UnsafeOutput;
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
 import com.esotericsoftware.kryo.util.Pool;
+import com.github.yona168.multiblockapi.MultiblockAPI;
 import com.github.yona168.multiblockapi.registry.MultiblockRegistry;
 import com.github.yona168.multiblockapi.state.MultiblockState;
 import com.github.yona168.multiblockapi.structure.Multiblock;
@@ -72,6 +73,16 @@ public class Kryogenic {
     actions.add(action);
   }
 
+  public static Pool<Kryo> getNewPool(MultiblockAPI api){
+    return new Pool<Kryo>(true, false, 32){
+      @Override
+      protected Kryo create() {
+        final Kryo kryo=new Kryo();
+        init(api.getMultiblockRegistry(), kryo);
+        return kryo;
+      }
+    };
+  }
   private static void init(MultiblockRegistry multiblockRegistry, Kryo KRYO) {
     KRYO.setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
     KRYO.setRegistrationRequired(false);

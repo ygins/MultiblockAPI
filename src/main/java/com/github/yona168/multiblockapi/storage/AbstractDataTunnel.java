@@ -15,11 +15,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static java.util.Collections.newSetFromMap;
-import static org.bukkit.Bukkit.broadcastMessage;
 
 public abstract class AbstractDataTunnel extends Component implements StateDataTunnel {
   private final Plugin plugin;
@@ -89,7 +87,7 @@ public abstract class AbstractDataTunnel extends Component implements StateDataT
   @Override
   public CompletableFuture<Void> removeFromAfarAsync(MultiblockState state) {
     CompletableFuture<Void> returning = new CompletableFuture<>();
-    asyncProccess(()-> {
+    asyncProccess(() -> {
       withWriteLockFor(state.getTriggerChunk(), () -> {
         initRemoveFromAfar(state);
         returning.complete(null);

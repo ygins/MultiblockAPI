@@ -76,7 +76,7 @@ public class StateLoaderListeners extends Component {
 
 
   private void handleInteract(PlayerInteractEvent event) {
-    if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getHand() != EquipmentSlot.HAND) {
+    if (event.getAction() != Action.RIGHT_CLICK_BLOCK) {
       return;
     }
     final Location clickedLoc = event.getClickedBlock().getLocation();

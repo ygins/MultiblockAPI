@@ -1,13 +1,11 @@
 package com.github.yona168.multiblockapi.state;
 
-import com.github.yona168.multiblockapi.pattern.Pattern;
 import com.github.yona168.multiblockapi.structure.LocationInfo;
 import com.github.yona168.multiblockapi.structure.Multiblock;
 import com.github.yona168.multiblockapi.util.ChunkCoords;
 import com.github.yona168.multiblockapi.util.ThreeDimensionalArrayCoords;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 
 import java.util.HashSet;
@@ -18,7 +16,7 @@ import java.util.stream.Collectors;
 
 import static java.util.UUID.randomUUID;
 
-public class SimpleMultiblockState implements MultiblockState {
+public class SimpleMultiblockState implements MultiblockState, Backup {
   private final Orientation orientation;
   private final Block bottomLeftBlock;
   private final Location triggerLoc;
@@ -28,35 +26,32 @@ public class SimpleMultiblockState implements MultiblockState {
   private final Chunk triggerChunk;
   private final Multiblock multiblock;
   private final UUID uuid;
-
+  private final LocationInfo locationInfo;
   //Whether or not the state exists within the world at the moment (not offloaded)
   private boolean enabled;
   //Whether or not the state is destroyed (Multiblock is destroyed)
   private boolean destroyed;
 
-  private SimpleMultiblockState(UUID uuid, Multiblock multiblock, Orientation orientation, Block bottomLeftBlock, Set<Location> allBlocks) {
+  protected SimpleMultiblockState(UUID uuid, Multiblock multiblock, LocationInfo locationInfo) {
     this.uuid = uuid;
     this.enabled = false;
     this.destroyed = false;
     this.multiblock = multiblock;
-    this.orientation = orientation;
-    this.bottomLeftBlock = bottomLeftBlock;
-    ThreeDimensionalArrayCoords triggerCoords=multiblock.getPattern().getTriggerCoords();
+    this.locationInfo=locationInfo;
+    this.orientation = locationInfo.getOrientation();
+    this.bottomLeftBlock = locationInfo.getBottomLeftCorner();
+    ThreeDimensionalArrayCoords triggerCoords = multiblock.getPattern().getTriggerCoords();
     this.triggerLoc = orientation.getBlock(triggerCoords.getY(), triggerCoords.getRow(), triggerCoords.getColumn(), bottomLeftBlock).getLocation();
-    this.allBlocks=allBlocks;
-    Set<Location> allBlocksCopy=new HashSet<>(allBlocks);
+    this.allBlocks = locationInfo.getAllBlockLocations();
+    Set<Location> allBlocksCopy = new HashSet<>(allBlocks);
     allBlocksCopy.remove(triggerLoc);
-    this.structureBlocks=allBlocksCopy;
+    this.structureBlocks = allBlocksCopy;
     occupiedChunks = allBlocks.stream().map(Location::getChunk).map(ChunkCoords::fromChunk).collect(Collectors.toSet());
     this.triggerChunk = triggerLoc.getChunk();
   }
 
   public SimpleMultiblockState(Multiblock multiblock, LocationInfo locInfo) {
-    this(randomUUID(), multiblock, locInfo.getOrientation(), locInfo.getBottomLeftCorner(), locInfo.getAllBlockLocations());
-  }
-
-  protected SimpleMultiblockState(UUID uuid, Multiblock multiblock, LocationInfo locInfo) {
-    this(uuid, multiblock, locInfo.getOrientation(), locInfo.getBottomLeftCorner(), locInfo.getAllBlockLocations());
+    this(randomUUID(), multiblock, locInfo);
   }
 
   @Override
@@ -179,4 +174,8 @@ public class SimpleMultiblockState implements MultiblockState {
   }
 
 
+  @Override
+  public MultiblockState snapshot() {
+    return new SimpleMultiblockState(this.uuid, this.multiblock, this.locationInfo);
+  }
 }
