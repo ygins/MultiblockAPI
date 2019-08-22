@@ -7,7 +7,8 @@ This can be used to create, for example, machines, guard towers, and magical alt
 
 ## Installation
 
-See https://jitpack.io/#com.github.Yona168/MultiblockAPI
+See https://jitpack.io/#com.github.Yona168/MultiblockAPI. Just make sure you are not compiling the plugin in-
+this is a standalone plugin. If you are using gradle, for example, do NOT use implementation-compileOnly works fine.
 
 ## Usage
 ### Types of Multiblocks
