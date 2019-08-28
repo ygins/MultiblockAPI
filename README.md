@@ -7,7 +7,7 @@ This can be used to create, for example, machines, guard towers, and magical alt
 
 ## Installation
 
-Get the plugin from the spigot page.  
+Get the plugin from the spigot page: https://www.spigotmc.org/resources/multiblockapi.70697/
 
 See https://jitpack.io/#com.github.Yona168/MultiblockAPI for adding it to your project. Just make sure you are not compiling the plugin in-
 this is a standalone plugin. If you are using gradle, for example, do NOT use implementation-compileOnly works fine.
@@ -104,11 +104,11 @@ MultiblockAPI.getAPI().getMultiblockRegistry().register(saysHiMultiblock, plugin
 ```
 And we're done!
 
-###How States are Stored
+### How States are Stored
 ```MultiblockStates``` are cached when their chunk is loaded, and offloaded when not.
 This provides enable/disable functionality (see below)
 
-###Custom states/multiblocks
+### Custom states/multiblocks
 
 When it comes to creating more complicated structures, you may want something besides the ```Simple```
 implementations for ```MultiblockState``` and ```Multiblock```. If so, you can easily make your own implementations.
@@ -266,7 +266,7 @@ public void onEnable(){
 Note how we implement Backup here-Backup is what defines our snapshot() method. There is no ```Simple```
 implementation of ```TickableState```, so Backup is optional.  Again, though, highly reccomended to use it.
 
-##Default Kryo Data Tunnel and why you should implement your own:
+## Default Kryo Data Tunnel and why you should implement your own:
 The default kryo data tunnel is easy to use, and is an option. The only issue with it is that it works outside of your plugin.
 If a server owner suddenly decides to remove a plugin using this API, that could mess up kryo files due to class registration.
 Creating your own ```KryoDataTunnel``` as an alternative is easy:
@@ -274,8 +274,8 @@ Creating your own ```KryoDataTunnel``` as an alternative is easy:
 Path folderToStoreIn=plugin.getDataFolder().resolve("multiblockchunks");
 StateDataTunnel myKryoDataTunnel=new KryoDataTunnel(Kryogenic.getNewPool(MultiblockAPI.getAPI()), folderToStoreIn, plugin);
 ```
-#Commands
+# Commands
 1. /mbapi -> backs up all multiblocks that can be backed up.
 
-#TODO
+# TODO
 Abstract SimpleMultiblockState further to allow optional implementation of Backup w/ easy extendability.
