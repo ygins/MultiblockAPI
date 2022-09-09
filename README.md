@@ -1,6 +1,6 @@
 # MultiblockAPI
 
-## The Heck is it?
+## What is it?
 MultiblockAPI is a spigot API to allow the creation of multiblocks. 
 Multiblocks are structures made from multiple blocks that, when together, make up their own special function.
 This can be used to create, for example, machines, guard towers, and magical altars.
