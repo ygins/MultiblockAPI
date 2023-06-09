@@ -1,3 +1,4 @@
+# NOTE: This plugin is no longer supported.
 # MultiblockAPI
 
 ## What is it?
