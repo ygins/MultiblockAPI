@@ -1,4 +1,4 @@
-//Created by https://github.com/Exerosis with personal alterations
+//Created by https://github.com/Exerosis with personal alterations. Used with permission.
 package com.github.yona168.multiblockapi.storage.kryo;
 
 import com.esotericsoftware.kryo.Kryo;
