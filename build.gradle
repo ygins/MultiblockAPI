@@ -1,12 +1,11 @@
 plugins {
     id 'java'
-    id 'com.github.johnrengelman.shadow' version '5.1.0'
+    id 'java-library'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 group 'com.github.yona168'
 version '1.0-SNAPSHOT'
-
-sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
@@ -18,21 +17,19 @@ repositories {
 }
 
 dependencies {
-    compile 'com.esotericsoftware:kryo:5.0.0-RC4'
-    compile "de.javakaffee:kryo-serializers:0.45"
+    implementation 'com.esotericsoftware:kryo:5.0.0-RC4'
+    implementation "de.javakaffee:kryo-serializers:0.45"
     compileOnly 'org.spigotmc:spigot-api:1.8.8-R0.1-SNAPSHOT'
-    compile 'com.gitlab.Avelyn:Core:0.0.16'
+    api 'com.gitlab.Avelyn:Core:0.0.16'
+    implementation 'com.gitlab.Avelyn:Architecture:1.0.0'
 }
 
 shadowJar {
-    archiveName = "${project.name}.jar"
-    destinationDir = file('Server/plugins')
+    archiveBaseName = "${project.name}.jar"
+    destinationDirectory = file('Server/plugins')
     minimize()
     manifest {
         attributes("Main-Class": "com.github.yona168.multiblockapi.MultiblockAPI")
     }
 
-}
-wrapper{
-    distributionUrl = "https://services.gradle.org/distributions/gradle-5.5.1-all.zip"
 }
