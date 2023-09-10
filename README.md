@@ -19,7 +19,7 @@ This can be used to create, for example, machines, guard towers, and magical alt
 
 Get the plugin from the spigot page: https://www.spigotmc.org/resources/multiblockapi.70697/
 
-See https://jitpack.io/#com.github.Yona168/MultiblockAPI for adding it to your project. Just make sure you are not compiling the plugin in-
+See https://jitpack.io/#com.github.ygins/MultiblockAPI for adding it to your project. Just make sure you are not compiling the plugin in-
 this is a standalone plugin. If you are using gradle, for example, do NOT use implementation-compileOnly works fine.
 
 ## Usage
