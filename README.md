@@ -1,5 +1,11 @@
-# NOTE: This plugin is no longer supported.
 # MultiblockAPI
+
+## Important Notes
+1. This plugin has since been [archived](https://www.spigotmc.org/resources/multiblockapi-archived.70697/) and is no
+longer undergoing active development. The jar is still available at that link, though.
+2. Since its 1.0.0 release, a dependency gave the build trouble, causing builds to fail. This has been
+fixed in version 1.0.1. The actual code did not change, so the 1.0.0 jar from the link above should work fine,
+or you can build it yourself.
 
 ## What is it?
 MultiblockAPI is a spigot API to allow the creation of multiblocks. 
