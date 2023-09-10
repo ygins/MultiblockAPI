@@ -2,10 +2,13 @@
 
 ## Important Notes
 1. This plugin has since been [archived](https://www.spigotmc.org/resources/multiblockapi-archived.70697/) and is no
-longer undergoing active development. The jar is still available at that link, though.
+longer undergoing active development. The jar is still available at that link, though. The last tested spigot version remains 1.8
 2. Since its 1.0.0 release, a dependency gave the build trouble, causing builds to fail. This has been
 fixed in version 1.0.1. The actual code did not change, so the 1.0.0 jar from the link above should work fine,
-or you can build it yourself.
+or you can build it yourself. You also need to add the following to your build.gradle:
+
+`implementation 'com.gitlab.Avelyn:Architecture:1.0.0'`
+
 
 ## What is it?
 MultiblockAPI is a spigot API to allow the creation of multiblocks. 
@@ -38,34 +41,15 @@ Let's try to make a multiblock that simply sends the message "Hi" when clicked.
 #### 1. Defining the structure
 To define the structure, we use the `Pattern` class. Our structure needs structure blocks,
 as well as a trigger block (the block that will trigger the action).
-Let's say we want our multiblock to be a 2 level 2x4 cobblestone square,
-with some diamonds on top, and a gold block to interact with. Consider this pattern:
-
-C=Cobblestone, D=Diamond Block, G=Gold block
-
-LEVEL 0:  
-C C   
-C C  
-C C  
-G C
-
-LEVEL 1:
-
-C D  
-C D  
-C D  
-C D
-
-We want level 1 to be on top of level 0. So, we have two levels,
-four rows on each level, and 2 columns on each level. Let's specify those dimensions:
+Let's say we just want a simple multiblock, with a diamond block on top of a gold one, and the trigger
+to be the diamond block:
 
 ```java
-Pattern myPattern=new PatternCreator(2,4,2).//Size Levels, Rows, Columns.  
-level(0).fillLevel(Material.COBBLESTONE). //level 0 fill with cobble
-.set(0,3, Material.GOLD_BLOCK). //set the gold block in bottom left corner for clicking
-level(1).fillColumn(0, Material.COBBLESTONE). //Fill half of level 1  
-.fillColumn(1, Material.DIAMOND_BLOCK). //Fill other half
-triggerCoords(0,0,3); //Tell the PatternCreator that the gold block is our trigger.
+        Pattern myPattern=new PatternCreator(2,1,1).//Size Levels, Rows, Columns.
+        level(0).
+        set(0,0, Material.GOLD_BLOCK). //set the gold block
+        level(1).set(0,0, Material.DIAMOND_BLOCK). //Set the diamond block
+        triggerCoords(1,0,0); //Tell the PatternCreator that the diamond block is our trigger
 ``` 
 
 #### 2. ID'ing the structure.
@@ -84,7 +68,7 @@ For this example, we don't have specific data being stored in multiblocks, as ea
 What we have to do now is define a ```StateCreator``` that provides us with new states on demand.
 
 ```java
-StateCreator<SimpleMultiblockState> myStateCreator=(multiblock, locationInfo, event)->new SimpleMultiblockState(multiblock, locationInfo, myPlugin);
+StateCreator<SimpleMultiblockState> myStateCreator=(multiblock, locationInfo, event)->new SimpleMultiblockState(multiblock, locationInfo);
 ```
 Now, we have to decide how our state is going to be stored away in a database. The objects that handle these
 are ```StateDataTunnels```-that is, they transport data from server to DB and back again.  
